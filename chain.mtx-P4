@@ -1,0 +1,32 @@
+% A row distributed adjacency matrix of a chain graph
+% with vertices 0,1,...,9
+% and edges (0,1) with weight 1, (1,2) with weight 2,
+% until (8,9) with weight 9.
+%
+% The matrix indices are 1-based,
+% following the Matrix Market format.
+%
+10 10 18 4
+0
+5
+9
+13
+18
+1 2 1.0
+2 1 1.0
+2 3 2.0
+3 2 2.0
+3 4 3.0
+4 3 3.0
+4 5 4.0
+5 4 4.0
+5 6 5.0
+6 5 5.0
+6 7 6.0
+7 6 6.0
+7 8 7.0
+8 7 7.0
+8 9 8.0
+9 8 8.0
+9 10 9.0
+10 9 9.0

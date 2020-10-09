@@ -1,0 +1,8 @@
+#!/bin/sh 
+bsprun ./inprod <input_inprod >output_inprod
+bsprun ./bench <input_bench >output_bench
+bsprun ./sort <input_sort >output_sort
+bsprun ./lu <input_lu >output_lu
+bsprun ./fft <input_fft >output_fft
+bsprun ./matvec <input_matvec >output_matvec
+bsprun ./match <input_match >output_match

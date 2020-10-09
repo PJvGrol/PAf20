@@ -1,0 +1,325 @@
+  ###########################################################################
+  ##      README                                                           ##
+  ##                                                                       ##
+  ##      BSPedupack Version 2.0                                           ##
+  ##      Copyright (C) 2020 Rob H. Bisseling                              ##
+  ##                                                                       ##
+  ##      BSPedupack is released under the GNU GENERAL PUBLIC LICENSE      ##
+  ##      Version 3, June 2007 (given in the file LICENSE)                 ##
+  ##                                                                       ##
+  ###########################################################################
+
+To compile the whole BSPedupack package on a UNIX system with a BSPlib
+library such as MulticoreBSP for C or BSPonMPI already installed:
+    $ make
+Here, the $ stands for the prompt.
+
+This produces 7 executables:
+    inprod for inner product computation (Chapter 1)
+    bench  for BSP benchmarking (Chapter 1)
+    sort   for sorting (Chapter 1)
+    lu     for LU decomposition (Chapter 2)
+    fft    for fast Fourier transforms (Chapter 3)
+    matvec for sparse matrix-vector multiplication (Chapter 4)
+    match  for graph matching (Chapter 5)
+
+I have added the following executables:
+    ssieve for sequential sieving
+    sieve for bsp sieving
+    twins for bsp twin primes
+    conj for bsp Goldbach's conjecture
+
+To produce only the inprod program:
+    $ make inprod
+
+To clean up, deleting object files and executables:
+    $ make clean
+
+If the compilation fails because the system does not recognize
+the command bspcc, you need to make it visible by adding its directory
+to the search path, which can be done by using an export command.
+
+---------------------------------------------------------------
+To run the inprod program interactively: 
+
+    $ bsprun ./inprod
+    How many processors do you want to use?
+    4
+    Please enter n:
+    1000
+    Proc 0: sum of squares up to 1000*1000 is 333833500
+    This took only 0.000022 seconds.
+    n(n+1)(2n+1)/6 = 333833500
+    Proc 1: sum of squares up to 1000*1000 is 333833500
+    Proc 2: sum of squares up to 1000*1000 is 333833500
+    Proc 3: sum of squares up to 1000*1000 is 333833500
+
+The maximum number of available processors has been determined
+by the installation of BSPlib.
+
+The program or the user can decide to use fewer than the maximum 
+number of processors. Here, four virtual processors are actually used
+on a dual-core laptop.
+
+Note that the output of the different processors is multiplexed
+and hence can be garbled.
+
+---------------------------------------------------------------
+To run the bench program on two processors of a dual-core laptop:
+
+    $ bsprun ./bench
+    How many processors do you want to use?
+    n=     1 min= 250.611 max= 256.855 av= 253.733 Mflop/s  fool=    0.0
+    n=     2 min= 485.113 max= 498.536 av= 491.824 Mflop/s  fool= -109.1
+    n=     4 min= 854.701 max= 867.021 av= 860.861 Mflop/s  fool= -327.3
+    n=     8 min= 1376.640 max= 1418.943 av= 1397.792 Mflop/s  fool= -763.8
+    n=    16 min= 1886.292 max= 1904.989 av= 1895.640 Mflop/s  fool=-1636.7
+    n=    32 min= 2310.261 max= 2348.926 av= 2329.593 Mflop/s  fool=-3382.4
+    n=    64 min= 2458.749 max= 2480.596 av= 2469.672 Mflop/s  fool=-6874.0
+    n=   128 min= 2546.377 max= 2600.873 av= 2573.625 Mflop/s  fool=-13857.1
+    n=   256 min= 3499.491 max= 4479.401 av= 3989.446 Mflop/s  fool=-27823.3
+    n=   512 min= 2754.665 max= 5217.263 av= 3985.964 Mflop/s  fool=-55755.8
+    n=  1024 min= 3245.171 max= 6258.461 av= 4751.816 Mflop/s  fool=-111620.7
+    Time of     0-relation = 0.52 microsec =     2487 flops
+    Time of     1-relation = 0.69 microsec =     3262 flops
+    Time of     2-relation = 0.78 microsec =     3705 flops
+    Time of     3-relation = 0.84 microsec =     3968 flops
+    Time of     4-relation = 0.91 microsec =     4330 flops
+    Time of     5-relation = 0.94 microsec =     4480 flops
+    ...
+    Time of  2048-relation = 54.11 microsec =   257114 flops
+    size double = 8 bytes
+    Range h=0 to p   : g= 609.4, l= 2541.9
+    Range h=p to 2048: g= 125.6, l= 2262.8
+    The bottom line for this BSP computer is:
+    p= 2, r= 4751.816 Mflop/s, g= 125.6, l= 2262.8
+
+Note that you may have to change the parameters NITERS and MAXH 
+to perform sensible benchmarks. Decrease NITERS if timing takes
+too long; increase it if the resolution of the clock is low. 
+Increase MAXH if you are interested in larger h-relations.
+
+It is always useful to plot the time of an h-relation
+as a function of h, e.g. by using gnuplot.
+To do this, delete all lines from the output except those starting with
+"Time of", name the resulting file bench_out, and use the gnuplot command
+    plot [0:2048] 'bench_out' using 3:8
+for h-relations with h=0,...,2048.
+Plotting is mandatory if you get negative values for g or l,
+which can easily happen.
+
+---------------------------------------------------------------
+To run the sorting program on two processors:
+
+    $ bsprun ./sort
+    How many processors do you want to use?
+    2
+    Please enter array length N:
+    1000
+    Using 2 processors
+    Proc 0: number of elements = 484 
+    Proc 0: first element = 0.000110 last element = 0.485614 
+    Proc 1: number of elements = 516 
+    Proc 1: first element = 0.485614 last element = 0.999987 
+    This took only 0.000156 seconds.
+
+This sorts an array of 1000 elements with random values between 0 and 1.
+The elements of processor 0 are all less than or equal to those of processor 1.
+The elements of each processor are sorted in increasing order.
+Note that the resulting block sizes are well-balanced:
+the load imbalance is epsilon = 516/500 - 1.0 = 0.032, i.e 3.2%. 
+
+---------------------------------------------------------------
+To run the lu program on four processors using 
+a square cyclic distribution:
+
+    $ bsprun ./lu
+    Please enter number of processor rows M:
+    2
+    Please enter number of processor columns N:
+    2
+    Please enter matrix size n:
+    3
+    LU decomposition of 3 by 3 matrix
+    using the 2 by 2 cyclic distribution
+    Start of LU decomposition
+    End of LU decomposition
+    This took only 0.000192 seconds.
+    
+    The output permutation is:
+    i=0, pi=1, proc=(0,0)
+    i=1, pi=2, proc=(1,0)
+    i=2, pi=0, proc=(0,0)
+    
+    The output matrix is:
+    i=0, j=0, a=1.000000, proc=(0,0)
+    i=0, j=2, a=1.000000, proc=(0,0)
+    i=2, j=0, a=0.500000, proc=(0,0)
+    i=2, j=2, a=1.000000, proc=(0,0)
+    i=0, j=1, a=1.000000, proc=(0,1)
+    i=2, j=1, a=0.500000, proc=(0,1)
+    i=1, j=0, a=0.500000, proc=(1,0)
+    i=1, j=2, a=1.000000, proc=(1,0)
+    i=1, j=1, a=1.000000, proc=(1,1)
+    Maximum error of proc=(0,0) = 0.000000
+    Maximum error of proc=(0,1) = 0.000000
+    Maximum error of proc=(1,0) = 0.000000
+    Maximum error of proc=(1,1) = 0.000000
+
+Note that the input matrix is chosen such that
+on output pi(i)= i+1 mod n,
+and a[i,j]= 1 for i<=j and a[i,j]= 0.5 for i>j.
+This is checked automatically, and the maximum error found
+is given for each processor.
+
+To prevent huge amounts of output for large n,
+you can remove some print statements.
+
+---------------------------------------------------------------
+To run the fft program on two processors:
+
+    $ bsprun ./fft
+    How many processors do you want to use?
+    2
+    Please enter length n: 
+    1024
+    FFT of vector of length 1024 using 2 processors
+    performing 100 forward and 100 backward transforms
+    The computed solution is (<= 10 values per processor):
+    Proc 1: j=1 Re= 1.000000 Im= 1.000000 
+    Proc 1: j=3 Re= 3.000000 Im= 1.000000 
+    Proc 1: j=5 Re= 5.000000 Im= 1.000000 
+    Proc 1: j=7 Re= 7.000000 Im= 1.000000 
+    Proc 1: j=9 Re= 9.000000 Im= 1.000000 
+    Proc 1: j=11 Re= 11.000000 Im= 1.000000 
+    Proc 1: j=13 Re= 13.000000 Im= 1.000000 
+    Proc 1: j=15 Re= 15.000000 Im= 1.000000 
+    Proc 1: j=17 Re= 17.000000 Im= 1.000000 
+    Proc 1: j=19 Re= 19.000000 Im= 1.000000 
+    The computed solution is (<= 10 values per processor):
+    Proc 0: j=0 Re= 0.000000 Im= 1.000000 
+    Proc 0: j=2 Re= 2.000000 Im= 1.000000 
+    Proc 0: j=4 Re= 4.000000 Im= 1.000000 
+    Proc 0: j=6 Re= 6.000000 Im= 1.000000 
+    Proc 0: j=8 Re= 8.000000 Im= 1.000000 
+    Proc 0: j=10 Re= 10.000000 Im= 1.000000 
+    Proc 0: j=12 Re= 12.000000 Im= 1.000000 
+    Proc 0: j=14 Re= 14.000000 Im= 1.000000 
+    Proc 0: j=16 Re= 16.000000 Im= 1.000000 
+    Proc 0: j=18 Re= 18.000000 Im= 1.000000 
+    Time per initialization = 0.000017 sec 
+    Time per FFT = 0.000016 sec 
+    Computing rate of FFT = 3304.758255 Mflop/s 
+    Absolute error= 2.463642e-11 
+    Relative error= 2.405900e-14 
+
+The problem size n must satisfy n >= 2p,
+and n,p must be powers of two.
+
+Note that on output Re=j and Im=1. The absolute and
+relative errors and flop rate are computed automatically.
+
+To prevent huge amounts of output for large p,
+change NPRINT (the number of values per processor printed).
+Here, NPRINT=10.
+
+Decrease NITERS if timing takes too long; increase it if
+the resolution of the clock is low. Here, NITERS=100.
+
+---------------------------------------------------------------
+To run the matvec program on two processors for the 
+matrix from Example 4.2: 
+
+    $ bsprun ./matvec
+    How many processors do you want to use?
+    2
+    Please enter the filename of the matrix distribution
+    test.mtx-P2
+    Please enter the filename of the v-vector distribution
+    test.mtx-v2
+    Please enter the filename of the u-vector distribution
+    test.mtx-u2
+    Sparse matrix-vector multiplication using 2 processors
+    Initialization for matrix-vector multiplications
+    Start of 1000 matrix-vector multiplications.
+    End of matrix-vector multiplications.
+    Initialization took only 0.000023 seconds.
+    Each matvec took only 0.000002 seconds.
+    The computed solution is (<= 10 values per processor):
+    Proc 0: i=0, u=4.000000 
+    Proc 0: i=1, u=5.000000 
+    Proc 0: i=3, u=14.000000 
+    Proc 1: i=2, u=16.000000 
+    Proc 1: i=4, u=22.000000 
+    Sum(u)=61.000000 sum(A)=61.000000 checksum error = 0.000000
+
+The three input files have been provided. They are in the output format
+of the sparse-matrix partitioner Mondriaan, which is a distributed
+Matrix Market file, with 1-based indexing (in contrast to the 0-based
+indexing of the book). The matrix is taken from Example 4.2,
+and the data distribution is as given in Figure 4.4. 
+
+Note that the vector distributions are read from file, 
+but that the numerical values of the input vector are all
+set to 1.0 by the driver program bspmv_test.
+As a result, v differs from the vector v displayed in Figure 4.4,
+and u from the displayed u.
+
+Because of the choice of v[j]=1 for all j, the sum of the components
+of u should equal the sum of the elements of A. 
+The difference is given as the checksum error.
+
+The number of processors in this small test is fixed at p=2.
+
+---------------------------------------------------------------
+To run the match program on four processors for a chain graph:
+
+    $ bsprun ./match
+    How many processors do you want to use?
+    4
+    Please enter the filename of the matrix distribution
+    chain.mtx-P4
+    Please enter the maximum number of operations per superstep
+        (0 if no maximum)
+    0
+    No maximum number of operations per superstep
+    
+    Start of graph matching using 4 processors
+    End of the graph matching.
+    Matching took only 0.000025 seconds.
+    
+    The computed solution is (<= 10 values per processor, 1-based):
+    Proc 0: found match (i,j)= (3, 4) with weight=3.000000 
+    Proc 0: found match (i,j)= (1, 2) with weight=1.000000 
+    Proc 1: found match (i,j)= (5, 6) with weight=5.000000 
+    Proc 1: found match (i,j)= (4, 3) with weight=3.000000 
+    Proc 2: found match (i,j)= (7, 8) with weight=7.000000 
+    Proc 2: found match (i,j)= (6, 5) with weight=5.000000 
+    Proc 3: found match (i,j)= (9, 10) with weight=9.000000 
+    Proc 3: found match (i,j)= (8, 7) with weight=7.000000 
+    Proc 0: found 1 internal matches and 1 external matches
+    Proc 1: found 0 internal matches and 2 external matches
+    Proc 2: found 0 internal matches and 2 external matches
+    Proc 3: found 1 internal matches and 1 external matches
+    Proc 0: number of operations performed = 16
+    Proc 1: number of operations performed = 13
+    Proc 2: number of operations performed = 13
+    Proc 3: number of operations performed = 16
+    
+    Total number of operations = 58
+    Total number of supersteps = 5
+    Total number of matches = 5
+    Total matching weight= 25.000000
+    Upper bound on matching weight= 27.000000
+    Total edge weight= 45.000000
+    
+The input is a chain graph with 10 vertices and 9 edges (i,i+1) with weight
+omega(i,i+1)=i, for 1 <= i < 10. (Here, indexing is 1-based.)
+
+The optimal matching for a chain of n vertices with n even has a weight n^2/4.
+Here, this weight is 25, which is slightly below the upper bound of 27
+given by eqn (5.27). This bound is printed, together with other statistics.
+
+---------------------------------------------------------------
+To run all tests for p=4, you can use the script:
+    $ ./runtests
