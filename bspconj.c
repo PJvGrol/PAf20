@@ -11,6 +11,7 @@ long P; // number of processors requested
 void bspconj(){
     
     bsp_begin(P);
+    double startTime = bsp_time();
     long p= bsp_nprocs(); // p = number of processors
     long s= bsp_pid();    // s = processor number
 
@@ -62,6 +63,9 @@ void bspconj(){
         with all values lower than pc. This also means that we can stop checking
         for multiples once we know that pc^2 > endValue
     */
+
+    double endSetup = bsp_time(); 
+
     while (globalPc * globalPc <= N){
 
         /*  The index from which we can start striking duplicates as non-prime
@@ -127,11 +131,13 @@ void bspconj(){
         globalPc = newPc;
     }
 
+    double endPrimes = bsp_time();
+
     bsp_pop_reg(pcs);
     vecfreei(pcs);
 
-    bool *allPrimes = vecallocb(N);
-    bsp_push_reg(allPrimes, N * sizeof(bool));
+    bool *allPrimes = vecallocb(P * size);
+    bsp_push_reg(allPrimes, P * size * sizeof(bool));
     bsp_sync();
 
     for (long i = 0; i < P; i++) {
@@ -177,6 +183,7 @@ void bspconj(){
         long halfSumValue = (isSumValue / 2);
         long halfSumIndex = halfSumValue - 1;
 
+        /*  To stay equidistant we simply subtract and add the same value to the halfvalue  */
         for (long i = 0; i < halfSumValue; i++){
             if (allPrimes[halfSumIndex - i] && allPrimes[halfSumIndex + i]){
                 isSum[(isSumValue - isSumStartValue) / 2] = true;
@@ -186,16 +193,23 @@ void bspconj(){
         }
     }
 
-    for (long i = 0; i < isSumSize; i++){
-        if (!isSum[i] && isSumStartValue <= isSumEndValue){
-            if (isSumStartValue + (i * 2) > 2){
-                printf("Processor %ld did not find a twinpair for value %ld\n", s, isSumStartValue + (i * 2));
-            }
-        }
-        else if(isSumStartValue + (i * 2) > 2){
-            printf("Processor %ld found primesum %ld + %ld for even number %ld\n", s, isSumValues[i], isSumStartValue + (i * 2) - isSumValues[i], isSumStartValue + (i * 2));
-        }
-    }
+    double endTime = bsp_time();
+
+    printf("Setup took %.6lf seconds\n", endSetup - startTime);
+    printf("From setup to calculating all primes took %.6lf seconds\n", endPrimes - endSetup);
+    printf("Verifying conjecture up to %ld on %ld processors took only %.6lf seconds.\n", N, P, endTime-startTime);
+    
+
+    // for (long i = 0; i < isSumSize; i++){
+    //     if (!isSum[i] && isSumStartValue <= isSumEndValue){
+    //         if (isSumStartValue + (i * 2) > 2){
+    //             printf("Processor %ld did not find a twinpair for value %ld\n", s, isSumStartValue + (i * 2));
+    //         }
+    //     }
+    //     else if(isSumStartValue + (i * 2) > 2){
+    //         printf("Processor %ld found primesum %ld + %ld for even number %ld\n", s, isSumValues[i], isSumStartValue + (i * 2) - isSumValues[i], isSumStartValue + (i * 2));
+    //     }
+    // }
 
     bsp_pop_reg(allPrimes);
     vecfreeb(allPrimes);

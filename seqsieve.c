@@ -11,6 +11,7 @@ long P; // number of processors requested
 void seqsieve(){
     /*  Sequentially sieve for prime numbers  */
     bsp_begin(1);
+    double startTime = bsp_time();
 
     /*  Boolean array of length N  */
     bool *primes = vecallocb(N);
@@ -30,6 +31,11 @@ void seqsieve(){
         with all values lower than pc. This also means that we can stop checking
         for multiples once we know that pc^2 > N
     */
+
+    double endSetup = bsp_time();
+
+    long operationCounter = 0;
+
     while (pc * pc <= N){
         /*  The index from which we can start striking duplicates as non-prime
             note that we need to remove one from the index, since C is zero-based
@@ -40,6 +46,7 @@ void seqsieve(){
         while (index < N){
             primes[index] = false;
             index += pc;
+            operationCounter++;
         }
 
         /*  Starting from our current pc, the next number marked
@@ -52,6 +59,12 @@ void seqsieve(){
             }
         }
     }
+
+    double endTime = bsp_time();
+
+    printf("Setup took %.6lf seconds\n", endSetup - startTime);
+    printf("Calculating primes up to %ld took only %.6lf seconds.\n", N, endTime-startTime);
+    printf("A total of %ld operations was performed\n", operationCounter);
 
     for (long i = 0; i < N; i++){
         if (primes[i]){

@@ -11,6 +11,9 @@ long P; // number of processors requested
 void bsptwins(){
     
     bsp_begin(P);
+
+    double startTime = bsp_time();
+
     long p= bsp_nprocs(); // p = number of processors
     long s= bsp_pid();    // s = processor number
 
@@ -62,6 +65,9 @@ void bsptwins(){
         with all values lower than pc. This also means that we can stop checking
         for multiples once we know that pc^2 > endValue
     */
+
+    double endSetup = bsp_time(); 
+
     while (globalPc * globalPc <= N){
 
         /*  The index from which we can start striking duplicates as non-prime
@@ -126,13 +132,15 @@ void bsptwins(){
 
         globalPc = newPc;
     }
-    
-    for (long j = 0; j < size; j++){
-        /*  Check on endvalue for cases where P does not divide N  */
-        if (primes[j] && startValue + j <= endValue){
-            printf("Processor %ld found prime number %ld\n", s, startValue + j);
-        }
-    }
+
+    double endPrimes = bsp_time();
+
+    // for (long j = 0; j < size; j++){
+    //     /*  Check on endvalue for cases where P does not divide N  */
+    //     if (primes[j] && startValue + j <= endValue){
+    //         printf("Processor %ld found prime number %ld\n", s, startValue + j);
+    //     }
+    // }
 
     bsp_pop_reg(pcs);
     vecfreei(pcs);
@@ -181,6 +189,13 @@ void bsptwins(){
             }
         }
     }
+
+    double endTime = bsp_time();
+
+    printf("Setup took %.6lf seconds\n", endSetup - startTime);
+    printf("From setup to calculating all primes took %.6lf seconds\n", endPrimes - endSetup);
+    printf("Calculating twin primes up to %ld on %ld processors took only %.6lf seconds.\n", N, P, endTime-startTime);
+    
     
     for (long i = 0; i < size; i++){
         if (twins[i]){

@@ -11,6 +11,9 @@ long P; // number of processors requested
 void bspsieve(){
     
     bsp_begin(P);
+
+    double startTime = bsp_time();
+
     long p= bsp_nprocs(); // p = number of processors
     long s= bsp_pid();    // s = processor number
 
@@ -62,6 +65,9 @@ void bspsieve(){
         with all values lower than pc. This also means that we can stop checking
         for multiples once we know that globalPc^2 > endValue
     */
+
+    double endSetup = bsp_time(); 
+
     while (globalPc * globalPc <= N){
 
         /*  The index from which we can start striking duplicates as non-prime
@@ -126,13 +132,18 @@ void bspsieve(){
 
         globalPc = newPc;
     }
+
+    double endTime = bsp_time();
+
+    printf("Setup took %.6lf seconds\n", endSetup - startTime);
+    printf("Calculating primes up to %ld on %ld processors took only %.6lf seconds.\n", N, P, endTime-startTime);
     
-    for (long j = 0; j < size; j++){
-        /*  Check on endvalue for cases where P does not divide N  */
-        if (primes[j] && startValue + j <= endValue){
-            printf("Processor %ld found prime number %ld\n", s, startValue + j);
-        }
-    }
+    // for (long j = 0; j < size; j++){
+    //     /*  Check on endvalue for cases where P does not divide N  */
+    //     if (primes[j] && startValue + j <= endValue){
+    //         printf("Processor %ld found prime number %ld\n", s, startValue + j);
+    //     }
+    // }
 
     bsp_pop_reg(pcs);
     vecfreei(pcs);
