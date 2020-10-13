@@ -152,12 +152,11 @@ void bspconj(){
     if (size % 2 != 0){
         isSumSize++;
     }
-
-    bool *isSum = vecallocb(isSumSize);
+    
     long *isSumValues = vecalloci(isSumSize);
 
     for (long i = 0; i < isSumSize; i++){
-        isSum[i] = false;
+        isSumValues[i] = -1;
     }
 
     long isSumStartValue = startValue;
@@ -186,7 +185,6 @@ void bspconj(){
         /*  To stay equidistant we simply subtract and add the same value to the halfvalue  */
         for (long i = 0; i < halfSumValue; i++){
             if (allPrimes[halfSumIndex - i] && allPrimes[halfSumIndex + i]){
-                isSum[(isSumValue - isSumStartValue) / 2] = true;
                 isSumValues[(isSumValue - isSumStartValue) / 2] = halfSumValue - i;
                 break;
             }
@@ -201,7 +199,7 @@ void bspconj(){
     
 
     // for (long i = 0; i < isSumSize; i++){
-    //     if (!isSum[i] && isSumStartValue <= isSumEndValue){
+    //     if (isSumValues[i] == -1 && isSumStartValue <= isSumEndValue){
     //         if (isSumStartValue + (i * 2) > 2){
     //             printf("Processor %ld did not find a twinpair for value %ld\n", s, isSumStartValue + (i * 2));
     //         }
@@ -213,7 +211,6 @@ void bspconj(){
 
     bsp_pop_reg(allPrimes);
     vecfreeb(allPrimes);
-    vecfreeb(isSum);
     vecfreei(isSumValues);
 
     bsp_end();

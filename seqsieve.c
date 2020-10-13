@@ -53,6 +53,7 @@ void seqsieve(){
             as prime will be our next pc
         */
         for (long i = pc; i < N; i++){
+            operationCounter++;
             if (primes[i]){
                 pc = i + 1;
                 break;
@@ -66,11 +67,13 @@ void seqsieve(){
     printf("Calculating primes up to %ld took only %.6lf seconds.\n", N, endTime-startTime);
     printf("A total of %ld operations was performed\n", operationCounter);
 
-    for (long i = 0; i < N; i++){
-        if (primes[i]){
-            printf("%ld\n", i + 1);
-        }
-    }
+    // for (long i = 0; i < N; i++){
+    //     if (primes[i]){
+    //         printf("%ld\n", i + 1);
+    //     }
+    // }
+
+    printf("A total of %ld operations was performed\n", operationCounter);
 
     vecfreeb(primes);
     bsp_end();

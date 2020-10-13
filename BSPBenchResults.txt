@@ -1,0 +1,104 @@
+Range h=0 to p   : g= 44.3, l= 84.4
+Range h=p to 2048: g= 47.0, l= 171.5
+The bottom line for this BSP computer is:
+p= 1, r= 2263.974 Mflop/s, g= 47.0, l= 171.5
+
+Range h=0 to p   : g= 46.2, l= 87.4
+Range h=p to 2048: g= 47.0, l= 289.6
+The bottom line for this BSP computer is:
+p= 1, r= 2319.579 Mflop/s, g= 47.0, l= 289.6
+
+Range h=0 to p   : g= 47.6, l= 83.8
+Range h=p to 2048: g= 47.2, l= 151.8
+The bottom line for this BSP computer is:
+p= 1, r= 2324.507 Mflop/s, g= 47.2, l= 151.8
+
+Range h=0 to p   : g= 224.8, l= 539.6
+Range h=p to 2048: g= 184.2, l= 2468.0
+The bottom line for this BSP computer is:
+p= 2, r= 4615.890 Mflop/s, g= 184.2, l= 2468.0
+
+Range h=0 to p   : g= 226.3, l= 541.6
+Range h=p to 2048: g= 184.6, l= 2456.7
+The bottom line for this BSP computer is:
+p= 2, r= 4628.942 Mflop/s, g= 184.6, l= 2456.7
+
+Range h=0 to p   : g= 221.6, l= 545.9
+Range h=p to 2048: g= 184.1, l= 2765.6
+The bottom line for this BSP computer is:
+p= 2, r= 4629.371 Mflop/s, g= 184.1, l= 2765.6
+
+Range h=0 to p   : g= 361.3, l= 1698.6
+Range h=p to 2048: g= 186.0, l= 4976.9
+The bottom line for this BSP computer is:
+p= 4, r= 4627.563 Mflop/s, g= 186.0, l= 4976.9
+
+Range h=0 to p   : g= 378.7, l= 1654.3
+Range h=p to 2048: g= 185.7, l= 5060.7
+The bottom line for this BSP computer is:
+p= 4, r= 4629.442 Mflop/s, g= 185.7, l= 5060.7
+
+Range h=0 to p   : g= 376.6, l= 1667.3
+Range h=p to 2048: g= 185.0, l= 5157.8
+The bottom line for this BSP computer is:
+p= 4, r= 4616.900 Mflop/s, g= 185.0, l= 5157.8
+
+Range h=0 to p   : g= 422.6, l= 2363.6
+Range h=p to 2048: g= 185.2, l= 6976.6
+The bottom line for this BSP computer is:
+p= 6, r= 4616.113 Mflop/s, g= 185.2, l= 6976.6
+
+Range h=0 to p   : g= 411.3, l= 2385.5
+Range h=p to 2048: g= 185.9, l= 6677.9
+The bottom line for this BSP computer is:
+p= 6, r= 4613.504 Mflop/s, g= 185.9, l= 6677.9
+
+Range h=0 to p   : g= 411.2, l= 2380.7
+Range h=p to 2048: g= 186.7, l= 6681.7
+The bottom line for this BSP computer is:
+p= 6, r= 4628.357 Mflop/s, g= 186.7, l= 6681.7
+
+Range h=0 to p   : g= 430.2, l= 3328.2
+Range h=p to 2048: g= 193.1, l= 10091.7
+The bottom line for this BSP computer is:
+p= 8, r= 4626.982 Mflop/s, g= 193.1, l= 10091.7
+
+Range h=0 to p   : g= 449.9, l= 3227.0
+Range h=p to 2048: g= 193.0, l= 9976.0
+The bottom line for this BSP computer is:
+p= 8, r= 4616.612 Mflop/s, g= 193.0, l= 9976.0
+
+Range h=0 to p   : g= 443.0, l= 3152.6
+Range h=p to 2048: g= 192.2, l= 9850.3
+The bottom line for this BSP computer is:
+p= 8, r= 4612.242 Mflop/s, g= 192.2, l= 9850.3
+
+Range h=0 to p   : g= 428.9, l= 4255.9
+Range h=p to 2048: g= 201.1, l= 6020.8
+The bottom line for this BSP computer is:
+p= 10, r= 4623.515 Mflop/s, g= 201.1, l= 6020.8
+
+Range h=0 to p   : g= 422.0, l= 4232.1
+Range h=p to 2048: g= 201.0, l= 6042.2
+The bottom line for this BSP computer is:
+p= 10, r= 4626.601 Mflop/s, g= 201.0, l= 6042.2
+
+Range h=0 to p   : g= 423.5, l= 4197.3
+Range h=p to 2048: g= 196.6, l= 6285.9
+The bottom line for this BSP computer is:
+p= 10, r= 4609.789 Mflop/s, g= 196.6, l= 6285.9
+
+Range h=0 to p   : g= 693.9, l= 6220.1
+Range h=p to 2048: g= 251.1, l= -2530.9
+The bottom line for this BSP computer is:
+p= 12, r= 4626.995 Mflop/s, g= 251.1, l= -2530.9
+
+Range h=0 to p   : g= 595.0, l= 6350.1
+Range h=p to 2048: g= 257.0, l= -2619.9
+The bottom line for this BSP computer is:
+p= 12, r= 4624.369 Mflop/s, g= 257.0, l= -2619.9
+
+Range h=0 to p   : g= 683.4, l= 5957.3
+Range h=p to 2048: g= 253.3, l= -2091.7
+The bottom line for this BSP computer is:
+p= 12, r= 4627.719 Mflop/s, g= 253.3, l= -2091.7
