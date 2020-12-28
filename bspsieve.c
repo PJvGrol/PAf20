@@ -103,20 +103,22 @@ void bspsieve(){
                 value += globalPc;
             }
         }
-
+            
         long newPc;
 
-        /*  For each processor find the smallest prime candidate  */
-        for (long i = 0; i < size; i++){
-            if (primes[i] && startValue + i > globalPc){
-                newPc = startValue + i;
-                break;
+        if (globalPc == pcs[s]){
+            /*  For each processor find the smallest prime candidate  */
+            for (long i = 0; i < size; i++){
+                if (primes[i] && startValue + i > globalPc){
+                    newPc = startValue + i;
+                    break;
+                }
             }
-        }
 
-        /*  Each processor puts their pc in pcs on their index  */
-        for (long i = 0; i < P; i++) {
-            bsp_put(i, &newPc, pcs, s * sizeof(long), sizeof(long));
+            /*  Each processor puts their pc in pcs on their index  */
+            for (long i = 0; i < P; i++) {
+                bsp_put(i, &newPc, pcs, s * sizeof(long), sizeof(long));
+            }
         }
         
         bsp_sync();

@@ -3,6 +3,7 @@ CFLAGS= -std=c99 -Wall -O3
 LFLAGS= -lm
 
 OBJIP= bspinprod.o bspedupack.o
+OBJHK= bsphk.o bspedupack.o
 OBJSSV= seqsieve.o bspedupack.o
 OBJBSV= bspsieve.o bspedupack.o
 OBJTW= bsptwins.o bspedupack.o
@@ -14,7 +15,10 @@ OBJFFT= bspfft_test.o bspfft.o bspedupack.o
 OBJMV= bspmv_test.o bspmv.o bspsparse_input.o bspedupack.o
 OBJMATCH= bspmatch_test.o bspmatch.o bspsparse_input.o bspedupack.o
 
-all: inprod ssieve sieve twins bench sort lu fft matvec match
+all: hk inprod ssieve sieve twins bench sort lu fft matvec match
+
+hk: $(OBJHK)
+	$(CC) $(CFLAGS) -o hk $(OBJHK) $(LFLAGS)
 
 inprod: $(OBJIP)
 	$(CC) $(CFLAGS) -o inprod $(OBJIP) $(LFLAGS)
@@ -49,6 +53,7 @@ matvec: $(OBJMV)
 match: $(OBJMATCH)
 	$(CC) $(CFLAGS) -o match $(OBJMATCH) $(LFLAGS)
 
+bsphk.o: bspedupack.h
 bspinprod.o:  bspedupack.h
 seqsieve.o:  bspedupack.h
 bspsieve.o:  bspedupack.h
@@ -69,4 +74,4 @@ bspedupack.o: bspedupack.h
 
 .PHONY: clean
 clean:
-	rm -f $(OBJIP) $(OBJSSV) $(OBJBSV) $(OBJTW) $(OBJCJ) $(OBJBEN) $(OBJSORT) $(OBJLU) $(OBJFFT) $(OBJMV) $(OBJMATCH) inprod ssieve sieve twins conj bench sort lu fft matvec match
+	rm -f $(OBJHK) $(OBJIP) $(OBJSSV) $(OBJBSV) $(OBJTW) $(OBJCJ) $(OBJBEN) $(OBJSORT) $(OBJLU) $(OBJFFT) $(OBJMV) $(OBJMATCH) hk inprod ssieve sieve twins conj bench sort lu fft matvec match
