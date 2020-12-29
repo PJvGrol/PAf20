@@ -89,6 +89,14 @@ void bsphk(){
     bool *currentLayerU = vecallocb(m);
     bool *currentLayerV = vecallocb(m);
 
+    bool *currentLayersU = vecallocb(p * m);
+    bool *currentLayersV = vecallocb(p * m);
+    bool *bfsDones = vecallocb(p);
+    bsp_push_reg(currentLayersU, p * m * sizeof(bool));
+    bsp_push_reg(currentLayersV, p * m * sizeof(bool));
+    bsp_push_reg(bfsDones, p * sizeof(bool));
+    bsp_sync();
+
     bool *layerUHasEdges = vecallocb(m);
     bool *layerVHasEdges = vecallocb(m);
 
@@ -97,7 +105,6 @@ void bsphk(){
         layerVHasEdges[i] = false;
     }
 
-    bool *layerUFreeV = vecallocb(m);
     bool *layerVFree = vecallocb(m);
 
     long *bfsLayers = vecalloci(2 * m);
@@ -150,17 +157,36 @@ void bsphk(){
             for (long i = 0; i < m; i++){
                 ul[i] = u[i];
                 vl[i] = v[i];
-                layerUFreeV[i] = false;
                 layerVFree[i] = false;
                 visitedV[i] = false;
                 currentLayerU[i] = false;
                 currentLayerV[i] = false;
             }
             
-            for (long i = 0; i < m; i++){
+            for (long i = s; i < m; i+=p){
+                // check locally, then communitate
                 if (ul[i] == -1 && layerUHasEdges[i]){
-                    bfsResult[currentIndex] = i;
+                    // bfsResult[currentIndex] = i;
                     currentLayerU[i] = true;
+                    // currentIndex++;
+                }
+            }
+            
+            // communication step
+            // use which are visited to recreate bfsResult
+            for (long i = 0; i < p; i++){
+                bsp_put(i, currentLayerU, currentLayersU, s * m * sizeof(bool), m * sizeof(bool));
+            }
+            bsp_sync();
+
+            for (long i = 0; i < m; i++){
+                bool currentVertexVisited = currentLayerU[i];
+                for (long j = 0; j < p; j++){
+                    currentVertexVisited = currentVertexVisited || currentLayersU[j * m + i];
+                }
+                currentLayerU[i] = currentVertexVisited;
+                if (currentVertexVisited){
+                    bfsResult[currentIndex] = i;
                     currentIndex++;
                 }
             }
@@ -170,23 +196,57 @@ void bsphk(){
 
             for (long i = 0; i < m; i++){
                 if (currentLayerU[i]){
-                    for (long j = 0; j < m; j++){
+                    for (long j = s; j < m; j+=p){
                         if (edges[i * m + j] == 1 && !currentLayerV[j]){
-                            bfsResult[currentIndex] = j;
+                            // bfsResult[currentIndex] = j;
                             currentLayerV[j] = true;
-                            currentIndex++;
+                            // currentIndex++;
 
                             if (v[j] == -1){
                                 // As soon as we find any free vertex in V we are done
                                 // but we still need to complete all other searches in this level of BFS
-                                layerUFreeV[i] = true;
-                                layerVFree[j] = true;
+                                // layerVFree[j] = true;
                                 bfsDone = true;
                             }
                         }
                     }
                 }
                 currentLayerU[i] = false;
+            }
+            
+            // communication step
+            // use which are visited to recreate bfsResult
+            for (long i = 0; i < p; i++){
+                bsp_put(i, currentLayerV, currentLayersV, s * m * sizeof(bool), m * sizeof(bool));
+                bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+            }
+            bsp_sync();
+
+            for (long i = 0; i < p; i++){
+                bfsDone = bfsDone || bfsDones[i];
+            }
+
+            printf("Proc %d has bsfDone %d\n", s, bfsDone);
+
+            for (long i = 0; i < m; i++){
+                bool currentVertexVisited = currentLayerV[i];
+                for (long j = 0; j < p; j++){
+                    currentVertexVisited = currentVertexVisited || currentLayersV[j * m + i];
+                }
+                currentLayerV[i] = currentVertexVisited;
+                if (currentVertexVisited){
+                    if (bfsDone){
+                        if (v[i] == -1){
+                            layerVFree[i] = true;
+                            bfsResult[currentIndex] = i;
+                            currentIndex++;
+                        }
+                    }
+                    else{
+                        bfsResult[currentIndex] = i;
+                        currentIndex++;
+                    }
+                }
             }
 
             k++;
@@ -204,17 +264,36 @@ void bsphk(){
                 long previousLayerIndex = bfsLayers[k - 1];
                 
                 if (k % 2 == 0){
-                    for (long i = 0; i < m; i++){
+                    for (long i = s; i < m; i+=p){
                         if (currentLayerV[i]){
                             // Since v[i] contains the index of the vertex in U that vertex i in V is connected to, we can use that
                             // Additionally since we always have matched edges in this direction and unmatched in reverse
                             // We need not verify that we haven't visited this vertex in U yet, since we certainly won't have
                             // (As long as we properly verify we don't revisit vertices in V)
-                            bfsResult[currentIndex] = v[i];
+                            // bfsResult[currentIndex] = v[i];
                             currentLayerU[v[i]] = true;
+                            // currentIndex++;
+                        }
+                    }
+            
+                    // communication step
+                    // use which are visited to recreate bfsResult
+                    for (long i = 0; i < p; i++){
+                        bsp_put(i, currentLayerU, currentLayersU, s * m * sizeof(bool), m * sizeof(bool));
+                    }
+                    bsp_sync();
+
+                    for (long i = 0; i < m; i++){
+                        currentLayerV[i] = false;
+                        bool currentVertexVisited = currentLayerU[i];
+                        for (long j = 0; j < p; j++){
+                            currentVertexVisited = currentVertexVisited || currentLayersU[j * m + i];
+                        }
+                        currentLayerU[i] = currentVertexVisited;
+                        if (currentVertexVisited){
+                            bfsResult[currentIndex] = i;
                             currentIndex++;
                         }
-                        currentLayerV[i] = false;
                     }
                 }
                 // We were previously on the U side of things, so now in V
@@ -224,23 +303,55 @@ void bsphk(){
                         if (currentLayerU[i]){
                             // We need to find edges, verify these are unmatched and verify we don't visit already seen vertices in V.
                             // edges[i...i + m - 1] contains all edges from vertex i in U to vertices in V
-                            for (long j = 0; j < m; j++){
+                            for (long j = s; j < m; j+=p){
                                 if (!visitedV[j] && u[i] != j && edges[i * m + j] == 1){
-                                    bfsResult[currentIndex] = j;
+                                    // bfsResult[currentIndex] = j;
                                     currentLayerV[j] = true;
-                                    currentIndex++;
+                                    // currentIndex++;
 
                                     if (v[j] == -1){
                                         // As soon as we find any free vertex in V we are done
                                         // but we still need to complete all other searches in this level of BFS
-                                        layerUFreeV[i] = true;
-                                        layerVFree[j] = true;
+                                        // layerVFree[j] = true;
                                         bfsDone = true;
                                     }
                                 }
                             }
                         }
+                    }
+            
+                    // communication step
+                    // use which are visited to recreate bfsResult
+                    for (long i = 0; i < p; i++){
+                        bsp_put(i, currentLayerV, currentLayersV, s * m * sizeof(bool), m * sizeof(bool));
+                        bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+                    }
+                    bsp_sync();
+
+                    for (long i = 0; i < p; i++){
+                        bfsDone = bfsDone || bfsDones[i];
+                    }
+
+                    for (long i = 0; i < m; i++){
                         currentLayerU[i] = false;
+                        bool currentVertexVisited = currentLayerV[i];
+                        for (long j = 0; j < p; j++){
+                            currentVertexVisited = currentVertexVisited || currentLayersV[j * m + i];
+                        }
+                        currentLayerV[i] = currentVertexVisited;
+                        if (currentVertexVisited){
+                            if (bfsDone){
+                                if (v[i] == -1){
+                                    layerVFree[i] = true;
+                                    bfsResult[currentIndex] = i;
+                                    currentIndex++;
+                                }
+                            }
+                            else{
+                                bfsResult[currentIndex] = i;
+                                currentIndex++;
+                            }
+                        }
                     }
                 }
 
@@ -257,10 +368,14 @@ void bsphk(){
                     canGoOn = canGoOn || currentLayerU[i] || currentLayerV[i];
                 }
 
+                printf("Proc %d has done a round of BFS\n", s);
+
                 if (!canGoOn){
                     bfsFailed = true;
                 }
             }
+
+            printf("Proc %d has index %d\n", s, currentIndex);
 
             // We've now completed the BFS, we use DFS to find paths.
 
