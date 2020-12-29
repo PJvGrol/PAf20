@@ -71,15 +71,6 @@ void bsphk(){
         for (int i = 0; i < p; i++){
             bsp_put(i, edges, edges, 0, m * m * sizeof(long));
         }
-
-        // printf("MATRIX\n");
-        // for (long i = 0; i < m; i++){
-        //     for (long j = 0; j < m; j++){
-        //         if (edges[i * m + j] == 1){
-        //             printf("%d, %d connected\n", i, j);
-        //         }
-        //     }
-        // }
     }
 
     bsp_sync();
@@ -98,384 +89,327 @@ void bsphk(){
     bool *currentLayerU = vecallocb(m);
     bool *currentLayerV = vecallocb(m);
 
-    bool *layerUFreeV = vecallocb(m);
+    bool *layerUHasEdges = vecallocb(m);
+    bool *layerVHasEdges = vecallocb(m);
 
-    long *bfstrack = vecalloci(m * m);
+    for (long i = 0; i < m; i++){
+        layerUHasEdges[i] = false;
+        layerVHasEdges[i] = false;
+    }
+
+    bool *layerUFreeV = vecallocb(m);
+    bool *layerVFree = vecallocb(m);
+
+    long *bfsLayers = vecalloci(2 * m);
+    long *bfsResult = vecalloci(m * m);
+
+    long *candidatePath = vecalloci(2 * m);
+
+    long previousMatchings = 0;
+
+    for (long i = 0; i < m; i++){
+        for (long j = 0; j < m; j++){
+            if (edges[m * i + j] == 1){
+                layerUHasEdges[i] = true;
+                layerVHasEdges[j] = true;
+            }
+        }
+    }
+
+    long maximumMatchings = 0;
+    long maximumUMatchings = 0;
+    long maximumVMatchings = 0;
+
+    for (long i = 0; i < m; i++){
+        if (layerUHasEdges[i]){
+            maximumUMatchings++;
+        }
+        if (layerVHasEdges[i]){
+            maximumVMatchings++;
+        }
+    }
+
+    maximumMatchings = maximumUMatchings;
+    if (maximumVMatchings < maximumMatchings){
+        maximumMatchings = maximumVMatchings;
+    }
     
-    if (p == 1){
+    if (true){
         bool done = false;
 
         while (!done){
-            // start with bfs
+            // Start with BFS
+            // We can do an inital round to get a starting position
             bool bfsDone = false;
             long k = 0;
-            bfstrack[0] = -1;
-            long previousBlockIndex = 0;
-            long nextBlockIndex = 1;
-            long blockCountIndex = 2;
-            long index = 3; // vertex index
+            long currentIndex = 0;
+            long newMatchings = 0;
+
+            bfsLayers[k] = currentIndex;
 
             for (long i = 0; i < m; i++){
                 ul[i] = u[i];
                 vl[i] = v[i];
                 layerUFreeV[i] = false;
+                layerVFree[i] = false;
                 visitedV[i] = false;
                 currentLayerU[i] = false;
                 currentLayerV[i] = false;
             }
-
-            long blockCount = 0;
             
             for (long i = 0; i < m; i++){
-                if (ul[i] == -1){
-                    long edgeCountIndex = index + 1;
-                    long edgeCount = 0;
-                    long tempIndex = index + 2;
-                    bool connected = false;
-                    for (long j = 0; j < m; j++){
-                        if (edges[i * m + j] == 1){
-                            connected = true;
-                            bfstrack[edgeCountIndex - 1] = i;
-                            if (vl[j] == -1){
-                                layerUFreeV[i] = true;
-                                bfsDone = true;
-                            }
-                            currentLayerV[j] = true;
-                            bfstrack[tempIndex] = j;
-                            edgeCount++;
-                            tempIndex++;
-                        }
-                    }
-                    if (connected){
-                        blockCount++;
-                        index = tempIndex;
-                    }
-                    bfstrack[edgeCountIndex] = edgeCount;
+                if (ul[i] == -1 && layerUHasEdges[i]){
+                    bfsResult[currentIndex] = i;
+                    currentLayerU[i] = true;
+                    currentIndex++;
                 }
             }
 
+            k++;
+            bfsLayers[k] = currentIndex;
+
+            for (long i = 0; i < m; i++){
+                if (currentLayerU[i]){
+                    for (long j = 0; j < m; j++){
+                        if (edges[i * m + j] == 1 && !currentLayerV[j]){
+                            bfsResult[currentIndex] = j;
+                            currentLayerV[j] = true;
+                            currentIndex++;
+
+                            if (v[j] == -1){
+                                // As soon as we find any free vertex in V we are done
+                                // but we still need to complete all other searches in this level of BFS
+                                layerUFreeV[i] = true;
+                                layerVFree[j] = true;
+                                bfsDone = true;
+                            }
+                        }
+                    }
+                }
+                currentLayerU[i] = false;
+            }
+
+            k++;
+            bfsLayers[k] = currentIndex;
+            
             for (long i = 0; i < m; i++){
                 visitedV[i] = currentLayerV[i];
             }
 
-            bfstrack[index] = previousBlockIndex;
-            bfstrack[nextBlockIndex] = index;
-            bfstrack[blockCountIndex] = blockCount;
-
-            previousBlockIndex = index;
-            nextBlockIndex = index + 1;
-            blockCountIndex = index + 2;
-            index+=3;
-            k++;
-
-            blockCount = 0;
+            bool bfsFailed = false;
             
-            while (!bfsDone){
-                for (long i = 0; i < m; i++){
-                    if (k % 2 == 1){
-                        if (currentLayerV[i] && v[i] > -1){
-                            blockCount++;
-                            bfstrack[index] = i;
-                            bfstrack[index + 1] = 1;
-                            bfstrack[index + 2] = v[i];
+            while (!bfsDone && !bfsFailed){
+                // We were previously on the V side of things, so now in U
+                // This means we can simply go from V to U via matches
+                long previousLayerIndex = bfsLayers[k - 1];
+                
+                if (k % 2 == 0){
+                    for (long i = 0; i < m; i++){
+                        if (currentLayerV[i]){
+                            // Since v[i] contains the index of the vertex in U that vertex i in V is connected to, we can use that
+                            // Additionally since we always have matched edges in this direction and unmatched in reverse
+                            // We need not verify that we haven't visited this vertex in U yet, since we certainly won't have
+                            // (As long as we properly verify we don't revisit vertices in V)
+                            bfsResult[currentIndex] = v[i];
                             currentLayerU[v[i]] = true;
-                            index += 3;
+                            currentIndex++;
                         }
-                    }
-                    else{
-                        if (currentLayerU[i]){
-                            long edgeCountIndex = index + 1;
-                            long edgeCount = 0;
-                            long tempIndex = index + 2;
-                            bool connected = false;
-                            for (long j = 0; j < m; j++){
-                                if (edges[i * m + j] == 1 && u[i] != j && !visitedV[j]){
-                                    connected = true;
-                                    bfstrack[edgeCountIndex - 1] = i;
-                                    if (vl[j] == -1){
-                                        layerUFreeV[i] = true;
-                                        bfsDone = true;
-                                    }
-                                    currentLayerV[j] = true;
-                                    bfstrack[tempIndex] = j;
-                                    edgeCount++;
-                                    tempIndex++;
-                                }
-                            }
-                            if (connected){
-                                blockCount++;
-                                index = tempIndex;
-                            }
-                            bfstrack[edgeCountIndex] = edgeCount;
-                        }
-                    }
-                }
-
-                for (long i = 0; i < m; i++){
-                    if (k % 2 == 1){
                         currentLayerV[i] = false;
                     }
-                    else{
+                }
+                // We were previously on the U side of things, so now in V
+                // This means we go from U to V via unmatched edges
+                else{
+                    for (long i = 0; i < m; i++){
+                        if (currentLayerU[i]){
+                            // We need to find edges, verify these are unmatched and verify we don't visit already seen vertices in V.
+                            // edges[i...i + m - 1] contains all edges from vertex i in U to vertices in V
+                            for (long j = 0; j < m; j++){
+                                if (!visitedV[j] && u[i] != j && edges[i * m + j] == 1){
+                                    bfsResult[currentIndex] = j;
+                                    currentLayerV[j] = true;
+                                    currentIndex++;
+
+                                    if (v[j] == -1){
+                                        // As soon as we find any free vertex in V we are done
+                                        // but we still need to complete all other searches in this level of BFS
+                                        layerUFreeV[i] = true;
+                                        layerVFree[j] = true;
+                                        bfsDone = true;
+                                    }
+                                }
+                            }
+                        }
                         currentLayerU[i] = false;
-                        visitedV[i] = visitedV[i] || currentLayerV[i];
                     }
                 }
 
-                bfstrack[index] = previousBlockIndex;
-                bfstrack[nextBlockIndex] = index;
-                bfstrack[blockCountIndex] = blockCount;
-
-                bfsDone = currentLayerU[0] == currentLayerV[0];
-
-                for (long i = 1; i < m; i++){
-                    bfsDone = bfsDone && (currentLayerU[i] == currentLayerV[i]);
+                k++;
+                bfsLayers[k] = currentIndex;
+            
+                for (long i = 0; i < m; i++){
+                    visitedV[i] = visitedV[i] || currentLayerV[i];
                 }
 
-                if (!bfsDone){
-                    previousBlockIndex = index;
-                    nextBlockIndex = index + 1;
-                    blockCountIndex = index + 2;
-                    index+=3;
-                    k++;
+                bool canGoOn = false;
+
+                for (long i = 0; i < m; i++){
+                    canGoOn = canGoOn || currentLayerU[i] || currentLayerV[i];
                 }
 
-                blockCount = 0;
+                if (!canGoOn){
+                    bfsFailed = true;
+                }
             }
 
-            // printf("DATA/\n");
-            // for (long i = 0; i < 100 && i < previousBlockIndex; i++){
-            //     printf("%d\n", bfstrack[i]);
+            // We've now completed the BFS, we use DFS to find paths.
+
+            // for (long i = 0; i < k; i++){
+            //     printf("Layer %d:\n", i);
+            //     long currentLayerIndex = bfsLayers[i];
+            //     long nextLayerIndex = bfsLayers[i + 1];
+            //     for (long j = currentLayerIndex; j < nextLayerIndex; j++){
+            //         printf("Vertex %d\n", bfsResult[j]);
+            //     }
+            // }
+            
+            // Note that we've stored the vertices in U that lead to free vertices in V
+            // As well as the free vertices in V that we've hit
+            if (!bfsFailed){
+                for (long i = 0; i < m; i++){
+                    // As a first step we look at the step from the free vertex in V
+                    // to a vertex in U that may be free
+                    // This vertex needs to not have changed status yet
+                    // We can make use of the layers that we've found, but still need to check for
+                    // any changes that may have happened with a previous dfs
+                    long candidatePathIndex = 0;
+                    if (layerVFree[i]){
+                        // k-2 for we already have layerVFree to check layer k-1
+                        long uIndex = 0;
+                        long vIndex = i;
+                        candidatePath[0] = vIndex;
+                        candidatePathIndex = 1;
+                        bool dfsDone = false;
+                        for (long j = k - 2; j >= 0; j--){
+                            long layerStartIndex = bfsLayers[j];
+                            long nextLayerIndex = bfsLayers[j + 1];
+                            for (long l = layerStartIndex; l < nextLayerIndex; l++){
+                                if (j % 2 == 0){
+                                    uIndex = bfsResult[l];
+                                    vIndex = candidatePath[candidatePathIndex - 1];
+                                    if (ul[uIndex] != u[uIndex] || edges[uIndex * m + vIndex] != 1){
+                                        continue;
+                                    }
+                                    candidatePath[candidatePathIndex] = uIndex;
+                                    candidatePathIndex++;
+                                    if (ul[uIndex] == -1){
+                                        dfsDone = true;
+                                    }
+                                    break;
+                                }
+                                else{
+                                    uIndex = candidatePath[candidatePathIndex - 1];
+                                    vIndex = bfsResult[l];
+                                    if (vl[vIndex] != v[vIndex] || vl[vIndex] != uIndex || ul[uIndex] != vIndex){
+                                        continue;
+                                    }
+                                    candidatePath[candidatePathIndex] = vIndex;
+                                    candidatePathIndex++;
+                                    break;
+                                }
+                            }
+                            if (dfsDone){
+                                break;
+                            }
+                        }
+
+                        // make required changes
+                        if (dfsDone){
+                            for (long j = 0; j < candidatePathIndex; j++){
+                                if (j % 2 == 0){
+                                    vl[candidatePath[j]] = candidatePath[j + 1];
+                                }
+                                else{
+                                    ul[candidatePath[j]] = candidatePath[j - 1];
+                                }
+                            }
+                        }
+
+                        for (long j = 0; j <= candidatePathIndex; j++){
+                            candidatePath[j] = -1;
+                        }
+                    }
+                }
+            }
+
+            bool error = false;
+
+            // printf("MAXIMUMMATCHINGS: %d\n", maximumMatchings);
+
+            // printf("INITIAL MATCHING\n");
+
+            // for (long i = 0; i < m; i++){
+            //     printf("Vertex %d in U connected to vertex %d in V\n", i, u[i]);
+            //     if (edges[m * i + ul[i]] != 1){
+            //         error = true;
+            //     }
             // }
 
-            done = true;
 
-            // bfs is done now
-            // previousBlockIndex now contains where the last block starts
-            long blockIndex = previousBlockIndex + 2;
+            for (long i = 0; i < m; i++){
+                u[i] = ul[i];
+                v[i] = vl[i];
+            }
+            
+            for (long i = 0; i < m; i++){
+                if (u[i] != -1){
+                    newMatchings++;
+                }
+            }
 
-            // note: below doesn't work as we can only write a path when we know that it ends
+            if (newMatchings == previousMatchings || newMatchings == maximumMatchings){
+                printf("DONE!\n");
+                done = true;
+                if (newMatchings != maximumMatchings){
+                    printf("MATRIX\n");
+                    for (long i = 0; i < m; i++){
+                        for (long j = 0; j < m; j++){
+                            if (edges[i * m + j] == 1){
+                                printf("%d, %d connected\n", i, j);
+                            }
+                        }
+                    }
+                    printf("NEW MATCHING\n");
 
-            // there'll never be more than m free vertices in V anyway
-            // for (long i = 0; i < m && blockIndex < index; i++){
-            //     // uIndex is the index of the vertex in U
-            //     long uIndex = bfstrack[blockIndex];
-            //     // how many connections to V
-            //     long nrConn = bfstrack[blockIndex + 1];
-            //     blockIndex += 2;
-            //     if (!layerUFreeV[uIndex]){
-            //         blockIndex += nrConn;
-            //         continue;
-            //     }
-            //     for (long j = 0; j < nrConn; j++){
-            //         if (vl[bfstrack[blockIndex + j]] == -1){
-            //             long vIndex = bfstrack[blockIndex + j];
-            //             // we found the non-connected vertex that we need to connect
-            //             // now we need dfs for the path back.
-            //             bool dfsDone = false;
-            //             long oldVIndex = -1;
+                    for (long i = 0; i < m; i++){
+                        printf("Vertex %d in U connected to vertex %d in V\n", i, ul[i]);
+                        if (edges[m * i + ul[i]] != 1 && ul[i] != -1){
+                            error = true;
+                        }
+                    }
+                }
+            }
+            
+            previousMatchings = newMatchings;
 
-            //             if (ul[uIndex] == -1){
-            //                 ul[uIndex] = vIndex;
-            //                 vl[vIndex] = uIndex;
-            //                 dfsDone = true;
-            //             }
-            //             else{
-            //                 if (ul[uIndex] != u[uIndex]){
-            //                     dfsDone = true;
-            //                 }
-            //                 else{
-            //                     oldVIndex = ul[uIndex];
-            //                     ul[uIndex] = vIndex;
-            //                     vl[vIndex] = uIndex;
-            //                 }
-            //             }
+            long maxBfsIndex = bfsLayers[k];
 
-            //             long tempPreviousBlockIndex = previousBlockIndex;
+            for (long i = 0; i <= k; i++){
+                bfsLayers[i] = -1;
+            }
+            for (long i = 0; i <= maxBfsIndex; i++){
+                bfsResult[i] = -1;
+            }
 
-            //             while (!dfsDone){
-            //                 vIndex = oldVIndex;
-            //                 tempPreviousBlockIndex = bfstrack[bfstrack[tempPreviousBlockIndex]];
-            //                 long tempNextBlockIndex = bfstrack[tempPreviousBlockIndex + 1];
-            //                 long tempUIndex = bfstrack[tempPreviousBlockIndex + 2];
-            //                 long tempNrConn = bfstrack[tempPreviousBlockIndex + 3];
-
-            //                 long tempIndex = tempUIndex + 2;
-
-            //                 while (tempIndex < tempNextBlockIndex){
-            //                     if (tempIndex == tempUIndex + 2 + tempNrConn){
-            //                         tempUIndex = bfstrack[tempIndex];
-            //                         tempNrConn = bfstrack[tempIndex +1];
-            //                         tempIndex += 2;
-            //                     }
-
-            //                     if (bfstrack[tempIndex] == vIndex){
-            //                         if (ul[tempUIndex] == -1){
-            //                             ul[tempUIndex] = vIndex;
-            //                             vl[vIndex] = tempUIndex;
-            //                             dfsDone = true;
-            //                             break;
-            //                         }
-            //                         else{
-            //                             if (ul[uIndex] != u[uIndex]){
-            //                                 dfsDone = true;
-            //                                 break;
-            //                             }
-            //                             else{
-            //                                 oldVIndex = ul[uIndex];
-            //                                 ul[uIndex] = vIndex;
-            //                                 vl[vIndex] = uIndex;
-            //                             }
-            //                         }
-            //                     }
-            //                     tempIndex++;
-            //                 }
-            //             }
-            //         }
-            //     }
-            //     blockIndex += nrConn;
-            // }
-
-
+            printf("FINISH ROUND\n");
+            if (error){
+                printf("ERROR!\n");
+            }
         }
     }
     else{
 
     }
-
-
-    // /*  A vector in which to store prime candidates (pc)  */
-    // long *pcs = vecalloci(P);
-    // bsp_push_reg(pcs, P * sizeof(long));
-    // bsp_sync();
-    
-    // for (long i = 0; i < P; i++){
-    //     pcs[i] = 2;
-    // }
-
-    // /*  This rounds down by default  */
-    // long size = N / P;
-
-    // /*  So we get the ceiling by adding 1 if the remainder is not zero  */
-    // if (N % P != 0){
-    //     size++;
-    // }
-
-    // /*  Local storage of all found prime numbers  */
-    // bool *primes = vecallocb(size);
-
-    // /*  Set all numbers except 1 as a prime number  */
-    // for (long i = 0; i < size; i++){
-    //     primes[i] = true;
-    // }
-
-    // if (s == 0){
-    //     primes[0] = false;
-    // }
-
-    // /*  Our prime candidate, we know that the first one will be 2
-    //     All processors will start with this candidate
-    // */
-    // long globalPc = 2;
-
-    // /*  The actual values of the first and last number for each processor  */
-    // long startValue = s * size + 1;
-    // long endValue = (s + 1) * size;
-
-    // /*  Correct endvalue for the last processor  */
-    // if (endValue > N){
-    //     endValue = N;
-    // }
-
-    // /*  For any pc it suffices to start checking from pc^2, since the
-    //     previous rounds of the sieve will already have multiplied our pc
-    //     with all values lower than pc. This also means that we can stop checking
-    //     for multiples once we know that globalPc^2 > endValue
-    // */
-
-    // double endSetup = bsp_time(); 
-
-    // while (globalPc * globalPc <= N){
-
-    //     /*  The index from which we can start striking duplicates as non-prime
-    //         note that we need to remove one from the index, since C is zero-based
-    //     */
-
-    //     long value = 0;
-
-    //     /*  We need to find the smallest multiple that will be in range.
-    //         This cuts down on the inital duplications until we hit the startvalue.
-    //         If the found smallest multiple is smaller than globalPc^2, we use that.
-    //     */
-    //     long temp = startValue / globalPc;
-    //     if (startValue % globalPc != 0){
-    //         temp++;
-    //     }
-    //     value = temp * globalPc;
-
-    //     if (value < globalPc * globalPc){
-    //         value = globalPc * globalPc;
-    //     }
-
-    //     while (value <= endValue){
-    //         /*  To ensure we don't check values below the range  */
-    //         if (value < startValue){
-    //             value += globalPc;
-    //         }
-    //         /*  And also not outside of the range  */
-    //         else if (value <= endValue){
-    //             /*  Get the actual index of the value we're checking  */
-    //             long actualIndex = value - startValue;
-    //             primes[actualIndex] = false;
-    //             value += globalPc;
-    //         }
-    //     }
-            
-    //     long newPc;
-
-    //     if (globalPc == pcs[s]){
-    //         /*  For each processor find the smallest prime candidate  */
-    //         for (long i = 0; i < size; i++){
-    //             if (primes[i] && startValue + i > globalPc){
-    //                 newPc = startValue + i;
-    //                 break;
-    //             }
-    //         }
-
-    //         /*  Each processor puts their pc in pcs on their index  */
-    //         for (long i = 0; i < P; i++) {
-    //             bsp_put(i, &newPc, pcs, s * sizeof(long), sizeof(long));
-    //         }
-    //     }
-        
-    //     bsp_sync();
-        
-    //     newPc = -1;
-        
-    //     /*  Check for the smallest pc that increases globalPc  */
-    //     for (long i = 0; i < P; i++){
-    //         if (pcs[i] > globalPc && (pcs[i] < newPc || newPc == -1)){
-    //             newPc = pcs[i];
-    //         }
-    //     }
-
-    //     globalPc = newPc;
-    // }
-
-    // double endTime = bsp_time();
-
-    // printf("Setup took %.6lf seconds\n", endSetup - startTime);
-    // printf("Calculating primes up to %ld on %ld processors took only %.6lf seconds.\n", N, P, endTime-startTime);
-    
-    // // for (long j = 0; j < size; j++){
-    // //     /*  Check on endvalue for cases where P does not divide N  */
-    // //     if (primes[j] && startValue + j <= endValue){
-    // //         printf("Processor %ld found prime number %ld\n", s, startValue + j);
-    // //     }
-    // // }
-
-    // bsp_pop_reg(pcs);
-    // vecfreei(pcs);
-    // vecfreeb(primes);
 
     bsp_pop_reg(u);
     bsp_pop_reg(v);
