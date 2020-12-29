@@ -1,0 +1,6 @@
+#!/bin/bash
+#SBATCH -J seqhk_job
+#SBATCH -n 480
+#SBATCH -t 01:00:00
+
+srun -n 480 ./hk
