@@ -31,8 +31,6 @@ void bsphk(){
     // u stores for the u nodes with v nodes they are connected to.
     long *u = vecalloci(m);
     long *v = vecalloci(m);
-    bsp_push_reg(u, m * sizeof(long));
-    bsp_push_reg(v, m * sizeof(long));
 
     bsp_sync();
 
@@ -81,20 +79,27 @@ void bsphk(){
         v[i] = -1;
     }
 
+    // ul and vl are the local/in progress versions of u and v
     long *ul = vecalloci(m);
     long *vl = vecalloci(m);
 
-    bool *visitedV = vecallocb(m);
+    bool *visitedVerticesV = vecallocb(m);
 
-    bool *currentLayerU = vecallocb(m);
-    bool *currentLayerV = vecallocb(m);
+    bool *currentVerticesU = vecallocb(m);
+    bool *currentVerticesV = vecallocb(m);
 
-    bool *currentLayersU = vecallocb(p * m);
-    bool *currentLayersV = vecallocb(p * m);
+    bool *currentVerticesUs = vecallocb(p * m);
+    bool *currentVerticesVs = vecallocb(p * m);
     bool *bfsDones = vecallocb(p);
-    bsp_push_reg(currentLayersU, p * m * sizeof(bool));
-    bsp_push_reg(currentLayersV, p * m * sizeof(bool));
+    long *paths = vecalloci(p * m * 2);
+    long *pathIndices = vecalloci(p);
+    bool *pathsFound = vecallocb(p);
+    bsp_push_reg(currentVerticesUs, p * m * sizeof(bool));
+    bsp_push_reg(currentVerticesVs, p * m * sizeof(bool));
     bsp_push_reg(bfsDones, p * sizeof(bool));
+    bsp_push_reg(paths, p * m * 2 * sizeof(long));
+    bsp_push_reg(pathIndices, p * sizeof(long));
+    bsp_push_reg(pathsFound, p * sizeof(bool));
     bsp_sync();
 
     bool *layerUHasEdges = vecallocb(m);
@@ -105,14 +110,14 @@ void bsphk(){
         layerVHasEdges[i] = false;
     }
 
-    bool *layerVFree = vecallocb(m);
+    bool *finalVerticesV = vecallocb(m);
 
     long *bfsLayers = vecalloci(2 * m);
     long *bfsResult = vecalloci(m * m);
 
-    long *candidatePath = vecalloci(2 * m);
+    long *path = vecalloci(2 * m);
 
-    long previousMatchings = 0;
+    long oldMatchingCount = 0;
 
     for (long i = 0; i < m; i++){
         for (long j = 0; j < m; j++){
@@ -123,7 +128,7 @@ void bsphk(){
         }
     }
 
-    long maximumMatchings = 0;
+    long maxMatchingCount = 0;
     long maximumUMatchings = 0;
     long maximumVMatchings = 0;
 
@@ -136,357 +141,352 @@ void bsphk(){
         }
     }
 
-    maximumMatchings = maximumUMatchings;
-    if (maximumVMatchings < maximumMatchings){
-        maximumMatchings = maximumVMatchings;
+    maxMatchingCount = maximumUMatchings;
+    if (maximumVMatchings < maxMatchingCount){
+        maxMatchingCount = maximumVMatchings;
     }
-    
-    if (true){
-        bool done = false;
 
-        while (!done){
-            // Start with BFS
-            // We can do an inital round to get a starting position
-            bool bfsDone = false;
-            long k = 0;
-            long currentIndex = 0;
-            long newMatchings = 0;
+    bool done = false;
 
-            bfsLayers[k] = currentIndex;
+    while (!done){
+        bool bfsDone = false;
 
-            for (long i = 0; i < m; i++){
-                ul[i] = u[i];
-                vl[i] = v[i];
-                layerVFree[i] = false;
-                visitedV[i] = false;
-                currentLayerU[i] = false;
-                currentLayerV[i] = false;
-            }
-            
-            for (long i = s; i < m; i+=p){
-                // check locally, then communitate
-                if (ul[i] == -1 && layerUHasEdges[i]){
-                    // bfsResult[currentIndex] = i;
-                    currentLayerU[i] = true;
-                    // currentIndex++;
-                }
-            }
-            
-            // communication step
-            // use which are visited to recreate bfsResult
-            for (long i = 0; i < p; i++){
-                bsp_put(i, currentLayerU, currentLayersU, s * m * sizeof(bool), m * sizeof(bool));
-            }
-            bsp_sync();
+        long layer = 0;
+        long index = 0;
 
-            for (long i = 0; i < m; i++){
-                bool currentVertexVisited = currentLayerU[i];
-                for (long j = 0; j < p; j++){
-                    currentVertexVisited = currentVertexVisited || currentLayersU[j * m + i];
-                }
-                currentLayerU[i] = currentVertexVisited;
-                if (currentVertexVisited){
-                    bfsResult[currentIndex] = i;
-                    currentIndex++;
-                }
-            }
+        for (long i = 0; i < m; i++){
+            ul[i] = u[i];
+            vl[i] = v[i];
+            currentVerticesU[i] = false;
+            currentVerticesV[i] = false;
+            visitedVerticesV[i] = false;
+            finalVerticesV[i] = false;
+        }
 
-            k++;
-            bfsLayers[k] = currentIndex;
+        // Layer 0 and 1 of BFS, cyclic distr.
 
-            for (long i = 0; i < m; i++){
-                if (currentLayerU[i]){
-                    for (long j = s; j < m; j+=p){
-                        if (edges[i * m + j] == 1 && !currentLayerV[j]){
-                            // bfsResult[currentIndex] = j;
-                            currentLayerV[j] = true;
-                            // currentIndex++;
+        for (long i = s; i < m; i += p){
+            if (layerUHasEdges[i] && ul[i] == -1){
+                currentVerticesU[i] = true;
 
-                            if (v[j] == -1){
-                                // As soon as we find any free vertex in V we are done
-                                // but we still need to complete all other searches in this level of BFS
-                                // layerVFree[j] = true;
-                                bfsDone = true;
-                            }
+                for (long j = 0; j < m; j++){
+                    if (edges[i * m + j] == 1){
+                        currentVerticesV[j] = true;
+
+                        if (vl[j] == -1){
+                            bfsDone = true;
                         }
                     }
                 }
-                currentLayerU[i] = false;
             }
-            
-            // communication step
-            // use which are visited to recreate bfsResult
-            for (long i = 0; i < p; i++){
-                bsp_put(i, currentLayerV, currentLayersV, s * m * sizeof(bool), m * sizeof(bool));
-                bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+        }
+
+        for (long i = 0; i < p; i++){
+            bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
+            bsp_put(i, currentVerticesV, currentVerticesVs, s * m * sizeof(bool), m * sizeof(bool));
+            bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+        }
+
+        bsp_sync();
+
+        for (long i = 0; i < p; i++){
+            if (bfsDones[i]){
+                bfsDone = true;
             }
-            bsp_sync();
+        }
 
-            for (long i = 0; i < p; i++){
-                bfsDone = bfsDone || bfsDones[i];
-            }
+        bfsLayers[layer] = index;
 
-            printf("Proc %d has bsfDone %d\n", s, bfsDone);
+        for (long i = 0; i < m; i++){
+            bool vertexVisited = false;
 
-            for (long i = 0; i < m; i++){
-                bool currentVertexVisited = currentLayerV[i];
-                for (long j = 0; j < p; j++){
-                    currentVertexVisited = currentVertexVisited || currentLayersV[j * m + i];
-                }
-                currentLayerV[i] = currentVertexVisited;
-                if (currentVertexVisited){
-                    if (bfsDone){
-                        if (v[i] == -1){
-                            layerVFree[i] = true;
-                            bfsResult[currentIndex] = i;
-                            currentIndex++;
-                        }
-                    }
-                    else{
-                        bfsResult[currentIndex] = i;
-                        currentIndex++;
-                    }
+            for (long j = 0; j < p; j++){
+                if (currentVerticesUs[j * m + i]){
+                    vertexVisited = true;
                 }
             }
 
-            k++;
-            bfsLayers[k] = currentIndex;
-            
-            for (long i = 0; i < m; i++){
-                visitedV[i] = currentLayerV[i];
+            if (vertexVisited){
+                currentVerticesU[i] = true;
+                bfsResult[index] = i;
+                index++;
+            }
+        }
+
+        layer++;
+        bfsLayers[layer] = index;
+
+        for (long i = 0; i < m; i++){
+            currentVerticesU[i] = false;
+
+            bool vertexVisited = false;
+
+            for (long j = 0; j < p; j++){
+                if (currentVerticesVs[j * m + i]){
+                    vertexVisited = true;
+                }
             }
 
-            bool bfsFailed = false;
-            
-            while (!bfsDone && !bfsFailed){
-                // We were previously on the V side of things, so now in U
-                // This means we can simply go from V to U via matches
-                long previousLayerIndex = bfsLayers[k - 1];
-                
-                if (k % 2 == 0){
-                    for (long i = s; i < m; i+=p){
-                        if (currentLayerV[i]){
-                            // Since v[i] contains the index of the vertex in U that vertex i in V is connected to, we can use that
-                            // Additionally since we always have matched edges in this direction and unmatched in reverse
-                            // We need not verify that we haven't visited this vertex in U yet, since we certainly won't have
-                            // (As long as we properly verify we don't revisit vertices in V)
-                            // bfsResult[currentIndex] = v[i];
-                            currentLayerU[v[i]] = true;
-                            // currentIndex++;
-                        }
-                    }
-            
-                    // communication step
-                    // use which are visited to recreate bfsResult
-                    for (long i = 0; i < p; i++){
-                        bsp_put(i, currentLayerU, currentLayersU, s * m * sizeof(bool), m * sizeof(bool));
-                    }
-                    bsp_sync();
+            if (vertexVisited){
+                visitedVerticesV[i] = true;
 
-                    for (long i = 0; i < m; i++){
-                        currentLayerV[i] = false;
-                        bool currentVertexVisited = currentLayerU[i];
-                        for (long j = 0; j < p; j++){
-                            currentVertexVisited = currentVertexVisited || currentLayersU[j * m + i];
-                        }
-                        currentLayerU[i] = currentVertexVisited;
-                        if (currentVertexVisited){
-                            bfsResult[currentIndex] = i;
-                            currentIndex++;
-                        }
+                if (bfsDone && vl[i] == -1){
+                    finalVerticesV[i] = true;
+                    currentVerticesV[i] = true;
+                    bfsResult[index] = i;
+                    index++;
+                }
+                else if (!bfsDone){
+                    currentVerticesV[i] = true;
+                    bfsResult[index] = i;
+                    index++;
+                }
+            }
+        }
+
+        layer++;
+        bfsLayers[layer] = index;
+
+        // Value of layer is now 2
+        
+        bool bfsCanContinue = true;
+
+        while (!bfsDone && bfsCanContinue){
+            // layer % 2 == 0 means we're in V and need to get to U over a matched edge
+            if (layer % 2 == 0){
+                for (long i = s; i < m; i += p){
+                    if (currentVerticesV[i]){
+                        currentVerticesU[vl[i]] = true;
                     }
                 }
-                // We were previously on the U side of things, so now in V
-                // This means we go from U to V via unmatched edges
-                else{
-                    for (long i = 0; i < m; i++){
-                        if (currentLayerU[i]){
-                            // We need to find edges, verify these are unmatched and verify we don't visit already seen vertices in V.
-                            // edges[i...i + m - 1] contains all edges from vertex i in U to vertices in V
-                            for (long j = s; j < m; j+=p){
-                                if (!visitedV[j] && u[i] != j && edges[i * m + j] == 1){
-                                    // bfsResult[currentIndex] = j;
-                                    currentLayerV[j] = true;
-                                    // currentIndex++;
 
-                                    if (v[j] == -1){
-                                        // As soon as we find any free vertex in V we are done
-                                        // but we still need to complete all other searches in this level of BFS
-                                        // layerVFree[j] = true;
-                                        bfsDone = true;
-                                    }
+                for (long i = 0; i < p; i++){
+                    bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
+                }
+
+                bsp_sync();
+
+                for (long i = 0; i < m; i++){
+                    currentVerticesV[i] = false;
+
+                    bool vertexVisited = false;
+
+                    for (long j = 0; j < p; j++){
+                        if (currentVerticesUs[j * m + i]){
+                            vertexVisited = true;
+                        }
+                    }
+
+                    if (vertexVisited){
+                        currentVerticesU[i] = true;
+                        bfsResult[index] = i;
+                        index++;
+                    }
+                }
+            }
+            else{
+                for (long i = s; i < m; i += p){
+                    if (currentVerticesU[i]){
+                        for (long j = 0; j < m; j++){
+                            if (!visitedVerticesV[j] && edges[i * m + j] == 1 && ul[i] != j){
+                                currentVerticesV[j] = true;
+
+                                if (vl[j] == -1){
+                                    bfsDone = true;
                                 }
                             }
                         }
                     }
-            
-                    // communication step
-                    // use which are visited to recreate bfsResult
-                    for (long i = 0; i < p; i++){
-                        bsp_put(i, currentLayerV, currentLayersV, s * m * sizeof(bool), m * sizeof(bool));
-                        bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
-                    }
-                    bsp_sync();
+                }
 
-                    for (long i = 0; i < p; i++){
-                        bfsDone = bfsDone || bfsDones[i];
-                    }
+                for (long i = 0; i < p; i++){
+                    bsp_put(i, currentVerticesV, currentVerticesVs, s * m * sizeof(bool), m * sizeof(bool));
+                    bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+                }
 
-                    for (long i = 0; i < m; i++){
-                        currentLayerU[i] = false;
-                        bool currentVertexVisited = currentLayerV[i];
-                        for (long j = 0; j < p; j++){
-                            currentVertexVisited = currentVertexVisited || currentLayersV[j * m + i];
+                bsp_sync();
+
+                for (long i = 0; i < p; i++){
+                    if (bfsDones[i]){
+                        bfsDone = true;
+                    }
+                }
+
+                for (long i = 0; i < m; i++){
+                    currentVerticesU[i] = false;
+
+                    bool vertexVisited = false;
+
+                    for (long j = 0; j < p; j++){
+                        if (currentVerticesVs[j * m + i]){
+                            vertexVisited = true;
                         }
-                        currentLayerV[i] = currentVertexVisited;
-                        if (currentVertexVisited){
-                            if (bfsDone){
-                                if (v[i] == -1){
-                                    layerVFree[i] = true;
-                                    bfsResult[currentIndex] = i;
-                                    currentIndex++;
+                    }
+
+                    if (vertexVisited){
+                        visitedVerticesV[i] = true;
+
+                        if (bfsDone && vl[i] == -1){
+                            finalVerticesV[i] = true;
+                            currentVerticesV[i] = true;
+                            bfsResult[index] = i;
+                            index++;
+                        }
+                        else if (!bfsDone){
+                            currentVerticesV[i] = true;
+                            bfsResult[index] = i;
+                            index++;
+                        }
+                    }
+                }
+            }
+
+            layer++;
+            bfsLayers[layer] = index;
+
+            bfsCanContinue = false;
+
+            for (long i = 0; i < m; i++){
+                if (currentVerticesU[i] || currentVerticesV[i]){
+                    bfsCanContinue = true;
+                    break;
+                }
+            }
+        }
+
+        bool allDfsDone = false;
+
+        while (!allDfsDone){
+            bool pathFound = false;
+            long pathIndex = 0;
+            for (long i = s; i < m; i += p){
+                if (!pathFound && finalVerticesV[i]){
+                    long uIndex = 0;
+                    long vIndex = i;
+
+                    path[0] = vIndex;
+                    pathIndex = 1;
+                    
+                    for (long j = layer - 2; j > -1; j--){
+                        long startIndex = bfsLayers[j];
+                        long endIndex = bfsLayers[j + 1];
+
+                        for (long k = startIndex; k < endIndex; k++){
+                            if (j % 2 == 0){
+                                uIndex = bfsResult[k];
+                                vIndex = path[pathIndex - 1];
+
+                                if (ul[uIndex] == u[uIndex] && edges[uIndex * m + vIndex] == 1){
+                                    path[pathIndex] = uIndex;
+                                    pathIndex++;
+
+                                    if (ul[uIndex] == -1){
+                                        pathFound = true;
+                                    }
+
+                                    break;
                                 }
                             }
                             else{
-                                bfsResult[currentIndex] = i;
-                                currentIndex++;
+                                uIndex = path[pathIndex - 1];
+                                vIndex = bfsResult[k];
+
+                                if (vl[vIndex] == v[vIndex] && vl[vIndex] == uIndex){
+                                    path[pathIndex] = vIndex;
+                                    pathIndex++;
+
+                                    break;
+                                }
                             }
                         }
+
+                        if (pathFound){
+                            break;
+                        }
                     }
-                }
 
-                k++;
-                bfsLayers[k] = currentIndex;
-            
-                for (long i = 0; i < m; i++){
-                    visitedV[i] = visitedV[i] || currentLayerV[i];
-                }
-
-                bool canGoOn = false;
-
-                for (long i = 0; i < m; i++){
-                    canGoOn = canGoOn || currentLayerU[i] || currentLayerV[i];
-                }
-
-                printf("Proc %d has done a round of BFS\n", s);
-
-                if (!canGoOn){
-                    bfsFailed = true;
+                    if (pathFound){
+                        break;
+                    }
+                    else{
+                        finalVerticesV[i] = false;
+                    }
                 }
             }
 
-            printf("Proc %d has index %d\n", s, currentIndex);
+            for (long i = 0; i < p; i++){
+                bsp_put(i, path, paths, s * 2 * m * sizeof(long), 2 * m * sizeof(long));
+                bsp_put(i, &pathIndex, pathIndices, s * sizeof(long), sizeof(long));
+                bsp_put(i, &pathFound, pathsFound, s * sizeof(bool), sizeof(bool));
+            }
 
-            // We've now completed the BFS, we use DFS to find paths.
+            bsp_sync();
 
-            // for (long i = 0; i < k; i++){
-            //     printf("Layer %d:\n", i);
-            //     long currentLayerIndex = bfsLayers[i];
-            //     long nextLayerIndex = bfsLayers[i + 1];
-            //     for (long j = currentLayerIndex; j < nextLayerIndex; j++){
-            //         printf("Vertex %d\n", bfsResult[j]);
-            //     }
-            // }
-            
-            // Note that we've stored the vertices in U that lead to free vertices in V
-            // As well as the free vertices in V that we've hit
-            if (!bfsFailed){
-                for (long i = 0; i < m; i++){
-                    // As a first step we look at the step from the free vertex in V
-                    // to a vertex in U that may be free
-                    // This vertex needs to not have changed status yet
-                    // We can make use of the layers that we've found, but still need to check for
-                    // any changes that may have happened with a previous dfs
-                    long candidatePathIndex = 0;
-                    if (layerVFree[i]){
-                        // k-2 for we already have layerVFree to check layer k-1
-                        long uIndex = 0;
-                        long vIndex = i;
-                        candidatePath[0] = vIndex;
-                        candidatePathIndex = 1;
-                        bool dfsDone = false;
-                        for (long j = k - 2; j >= 0; j--){
-                            long layerStartIndex = bfsLayers[j];
-                            long nextLayerIndex = bfsLayers[j + 1];
-                            for (long l = layerStartIndex; l < nextLayerIndex; l++){
-                                if (j % 2 == 0){
-                                    uIndex = bfsResult[l];
-                                    vIndex = candidatePath[candidatePathIndex - 1];
-                                    if (ul[uIndex] != u[uIndex] || edges[uIndex * m + vIndex] != 1){
-                                        continue;
-                                    }
-                                    candidatePath[candidatePathIndex] = uIndex;
-                                    candidatePathIndex++;
-                                    if (ul[uIndex] == -1){
-                                        dfsDone = true;
-                                    }
-                                    break;
-                                }
-                                else{
-                                    uIndex = candidatePath[candidatePathIndex - 1];
-                                    vIndex = bfsResult[l];
-                                    if (vl[vIndex] != v[vIndex] || vl[vIndex] != uIndex || ul[uIndex] != vIndex){
-                                        continue;
-                                    }
-                                    candidatePath[candidatePathIndex] = vIndex;
-                                    candidatePathIndex++;
-                                    break;
-                                }
-                            }
-                            if (dfsDone){
-                                break;
+            allDfsDone = true;
+
+            for (long i = 0; i < p; i++){
+                if (pathsFound[i]){
+                    allDfsDone = false;
+
+                    long pathStartIndex = i * 2 * m;
+                    bool pathAccepted = true;
+                    
+                    for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
+                        if (j % 2 == 0){
+                            if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
+                                pathAccepted = false;
                             }
                         }
-
-                        // make required changes
-                        if (dfsDone){
-                            for (long j = 0; j < candidatePathIndex; j++){
-                                if (j % 2 == 0){
-                                    vl[candidatePath[j]] = candidatePath[j + 1];
-                                }
-                                else{
-                                    ul[candidatePath[j]] = candidatePath[j - 1];
-                                }
+                        else{
+                            if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
+                                pathAccepted = false;
                             }
                         }
+                    }
 
-                        for (long j = 0; j <= candidatePathIndex; j++){
-                            candidatePath[j] = -1;
+                    if (pathAccepted){
+                        finalVerticesV[paths[pathStartIndex]] = false;
+
+                        for (long j = 0; j < pathIndices[i]; j++){
+                            if (j % 2 == 0){
+                                vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
+                            }
+                            else{
+                                ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
+                            }
                         }
                     }
                 }
             }
 
-            bool error = false;
-
-            // printf("MAXIMUMMATCHINGS: %d\n", maximumMatchings);
-
-            // printf("INITIAL MATCHING\n");
-
-            // for (long i = 0; i < m; i++){
-            //     printf("Vertex %d in U connected to vertex %d in V\n", i, u[i]);
-            //     if (edges[m * i + ul[i]] != 1){
-            //         error = true;
-            //     }
-            // }
-
-
-            for (long i = 0; i < m; i++){
-                u[i] = ul[i];
-                v[i] = vl[i];
+            for (long i = 0 ; i < pathIndex + 1; i++){
+                path[i] = -1;
             }
-            
-            for (long i = 0; i < m; i++){
-                if (u[i] != -1){
-                    newMatchings++;
-                }
-            }
+        }
 
-            if (newMatchings == previousMatchings || newMatchings == maximumMatchings){
+        long newMatchingCount = 0;
+
+        for (long i = 0; i < m; i++){
+            u[i] = ul[i];
+            v[i] = vl[i];
+
+            if (u[i] != -1){
+                newMatchingCount++;
+            }
+        }
+
+        if (newMatchingCount == oldMatchingCount || newMatchingCount == maxMatchingCount){
+            done = true;
+
+            if (s == 0){
+                bool error = false;
+
                 printf("DONE!\n");
-                done = true;
-                if (newMatchings != maximumMatchings){
+
+                if (s == 0 && (true || newMatchingCount != maxMatchingCount)){
+
                     printf("MATRIX\n");
+
                     for (long i = 0; i < m; i++){
                         for (long j = 0; j < m; j++){
                             if (edges[i * m + j] == 1){
@@ -494,43 +494,70 @@ void bsphk(){
                             }
                         }
                     }
+
                     printf("NEW MATCHING\n");
 
                     for (long i = 0; i < m; i++){
+
                         printf("Vertex %d in U connected to vertex %d in V\n", i, ul[i]);
+
                         if (edges[m * i + ul[i]] != 1 && ul[i] != -1){
                             error = true;
                         }
                     }
                 }
-            }
-            
-            previousMatchings = newMatchings;
-
-            long maxBfsIndex = bfsLayers[k];
-
-            for (long i = 0; i <= k; i++){
-                bfsLayers[i] = -1;
-            }
-            for (long i = 0; i <= maxBfsIndex; i++){
-                bfsResult[i] = -1;
-            }
-
-            printf("FINISH ROUND\n");
-            if (error){
-                printf("ERROR!\n");
+                if (error){
+                    printf("ERROR!\n");
+                }
             }
         }
-    }
-    else{
 
+        oldMatchingCount = newMatchingCount;
+
+        long maxBfsIndex = bfsLayers[layer];
+
+        for (long i = 0; i < layer + 1; i++){
+            bfsLayers[i] = -1;
+        }
+
+        for (long i = 0; i < maxBfsIndex + 1; i++){
+            bfsResult[i] = -1;
+        }
+
+        for (long i = 0; i < p; i++){
+            bfsDones[i] = false;
+            pathsFound[i] = false;
+        }
     }
 
-    bsp_pop_reg(u);
-    bsp_pop_reg(v);
+    bsp_pop_reg(currentVerticesUs);
+    bsp_pop_reg(currentVerticesVs);
+    bsp_pop_reg(bfsDones);
+    bsp_pop_reg(paths);
+    bsp_pop_reg(pathIndices);
+    bsp_pop_reg(pathsFound);   
+
     vecfreei(edges);
     vecfreei(u);
     vecfreei(v);
+    vecfreei(ul);
+    vecfreei(vl);
+    vecfreeb(visitedVerticesV);
+    vecfreeb(currentVerticesU);
+    vecfreeb(currentVerticesV);
+    vecfreeb(currentVerticesUs);
+    vecfreeb(currentVerticesVs);
+    vecfreeb(bfsDones);
+    vecfreei(paths);
+    vecfreei(pathIndices);
+    vecfreeb(pathsFound);
+    vecfreeb(layerUHasEdges);
+    vecfreeb(layerVHasEdges);
+    vecfreeb(finalVerticesV);
+    vecfreei(bfsLayers);
+    vecfreei(bfsResult);
+    vecfreei(path);
+
     bsp_end();
 
 } /* end bsphk */
