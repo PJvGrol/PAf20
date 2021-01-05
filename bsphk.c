@@ -146,6 +146,8 @@ void bsphk(){
         maxMatchingCount = maximumVMatchings;
     }
 
+    printf("Starting HK\n");
+
     bool done = false;
 
     while (!done){
@@ -251,6 +253,8 @@ void bsphk(){
         
         bool bfsCanContinue = true;
 
+        printf("Round Zero BFS Done\n");
+
         while (!bfsDone && bfsCanContinue){
             // layer % 2 == 0 means we're in V and need to get to U over a matched edge
             if (layer % 2 == 0){
@@ -353,6 +357,8 @@ void bsphk(){
                 }
             }
         }
+
+        printf("BFS Done\n");
 
         bool allDfsDone = false;
 
@@ -463,6 +469,8 @@ void bsphk(){
                 path[i] = -1;
             }
         }
+
+        printf("DFS Done\n");
 
         long newMatchingCount = 0;
 
