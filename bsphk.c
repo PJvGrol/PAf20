@@ -15,8 +15,6 @@ void bsphk(){
     
     bsp_begin(P);
 
-    double startTime = bsp_time();
-
     long p= bsp_nprocs(); // p = number of processors
     long s= bsp_pid();    // s = processor number
     long m= M;
@@ -175,7 +173,22 @@ void bsphk(){
 
     bool done = false;
 
+    long roundCounter = 0;
+
+    long bfsSuperSteps = 0;
+    long dfsSuperSteps = 0;
+
+    long *nrPathsFound = vecalloci(p);
+
+    for (long i = 0; i < p; i++){
+        nrPathsFound[i] = 0;
+    }
+
+    double outerLoopStartTime = bsp_time();
+
     while (!done){
+        double startTime = bsp_time();
+
         bool bfsDone = false;
 
         long layer = 0;
@@ -218,6 +231,7 @@ void bsphk(){
         }
 
         bsp_sync();
+        bfsSuperSteps++;
 
         bfsDone = false;
 
@@ -285,6 +299,8 @@ void bsphk(){
         
         bool bfsCanContinue = true;
 
+        double initialBfsTime = bsp_time();
+
         while (!bfsDone && bfsCanContinue){
             // layer % 2 == 0 means we're in V and need to get to U over a matched edge
             if (layer % 2 == 0){
@@ -299,6 +315,7 @@ void bsphk(){
                 }
 
                 bsp_sync();
+                bfsSuperSteps++;
 
                 for (long i = 0; i < n; i++){
                     currentVerticesV[i] = false;
@@ -341,6 +358,7 @@ void bsphk(){
                 }
 
                 bsp_sync();
+                bfsSuperSteps++;
 
                 bfsDone = false;
 
@@ -400,6 +418,8 @@ void bsphk(){
                 }
             }
         }
+
+        double finalBfsTime = bsp_time();
 
         bool allDfsDone = false;
 
@@ -468,12 +488,14 @@ void bsphk(){
             }
 
             bsp_sync();
+            dfsSuperSteps++;
 
             allDfsDone = true;
 
             for (long i = 0; i < p; i++){
                 if (pathsFound[i]){
                     allDfsDone = false;
+                    nrPathsFound[i]++;
 
                     long pathStartIndex = i * (m + n);
                     bool pathAccepted = true;
@@ -511,6 +533,10 @@ void bsphk(){
             }
         }
 
+        bool finalDfsTime = bsp_time();
+
+        roundCounter++;
+
         long newMatchingCount = 0;
 
         for (long i = 0; i < m; i++){
@@ -534,27 +560,41 @@ void bsphk(){
                 printf("DONE!\n");
 
                 if (s == 0 && (true || newMatchingCount != maxMatchingCount)){
+                    printf("A total of %ld rounds of HK were required for the solution\n", roundCounter);
+
+                    printf("A total of %ld BFS communication related supersteps occurred\n", bfsSuperSteps);
+                    printf("A total of %ld DFS communication related supersteps occurred\n", dfsSuperSteps);
+
+                    for (long i = 0; i < p; i++){
+                        printf("Proc %ld found a total of %ld augmenting paths\n", i, nrPathsFound[i]);
+                    }
 
                     printf("MATRIX\n");
 
-                    for (long i = 0; i < m; i++){
-                        for (long j = 0; j < n; j++){
-                            if (edges[i * n + j] == 1){
-                                printf("%d, %d connected\n", i, j);
-                            }
-                        }
-                    }
+                    printf("%ld connections out of %ld possible\n", counter, m * n);
 
-                    printf("NEW MATCHING\n");
+                    // for (long i = 0; i < m; i++){
+                    //     for (long j = 0; j < n; j++){
+                    //         if (edges[i * n + j] == 1){
+                    //             printf("%ld, %ld connected\n", i, j);
+                    //         }
+                    //     }
+                    // }
 
-                    for (long i = 0; i < m; i++){
+                    printf("MATCHING\n");
 
-                        printf("Vertex %d in U connected to vertex %d in V\n", i, ul[i]);
+                    printf("Found a maximum matching of size %ld\n", newMatchingCount);
 
-                        if (edges[n * i + ul[i]] != 1 && ul[i] != -1){
-                            error = true;
-                        }
-                    }
+                    // printf("NEW MATCHING\n");
+
+                    // for (long i = 0; i < m; i++){
+
+                    //     printf("Vertex %ld in U connected to vertex %ld in V\n", i, ul[i]);
+
+                    //     if (edges[n * i + ul[i]] != 1 && ul[i] != -1){
+                    //         error = true;
+                    //     }
+                    // }
                 }
                 if (error){
                     printf("ERROR!\n");
