@@ -173,12 +173,15 @@ void bsphk(){
 
     bool done = false;
 
-    long roundCounter = 0;
+    long roundCounter = 1;
 
     long bfsSuperSteps = 0;
     long dfsSuperSteps = 0;
 
     long *nrPathsFound = vecalloci(p);
+
+    long acceptedPaths = 0;
+    long rejectedPaths = 0;
 
     for (long i = 0; i < p; i++){
         nrPathsFound[i] = 0;
@@ -423,6 +426,9 @@ void bsphk(){
 
         bool allDfsDone = false;
 
+        long augmentingPaths = 0;
+        long dfsRoundCounter = 0;
+
         while (!allDfsDone){
             bool pathFound = false;
             long pathIndex = 0;
@@ -492,50 +498,99 @@ void bsphk(){
 
             allDfsDone = true;
 
-            for (long i = 0; i < p; i++){
-                if (pathsFound[i]){
-                    allDfsDone = false;
-                    nrPathsFound[i]++;
+            if (dfsRoundCounter % 2 == 0){
+                for (long i = 0; i < p; i++){
+                    if (pathsFound[i]){
+                        augmentingPaths++;
+                        allDfsDone = false;
+                        nrPathsFound[i]++;
 
-                    long pathStartIndex = i * (m + n);
-                    bool pathAccepted = true;
-                    
-                    for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
-                        if (j % 2 == 0){
-                            if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
-                                pathAccepted = false;
+                        long pathStartIndex = i * (m + n);
+                        bool pathAccepted = true;
+                        
+                        for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
+                            if (j % 2 == 0){
+                                if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
+                                    pathAccepted = false;
+                                }
+                            }
+                            else{
+                                if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
+                                    pathAccepted = false;
+                                }
+                            }
+                        }
+
+                        if (pathAccepted){
+                            acceptedPaths++;
+                            finalVerticesV[paths[pathStartIndex]] = false;
+
+                            for (long j = 0; j < pathIndices[i]; j++){
+                                if (j % 2 == 0){
+                                    vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
+                                }
+                                else{
+                                    ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
+                                }
                             }
                         }
                         else{
-                            if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
-                                pathAccepted = false;
-                            }
-                        }
-                    }
-
-                    if (pathAccepted){
-                        finalVerticesV[paths[pathStartIndex]] = false;
-
-                        for (long j = 0; j < pathIndices[i]; j++){
-                            if (j % 2 == 0){
-                                vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
-                            }
-                            else{
-                                ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
-                            }
+                            rejectedPaths++;
                         }
                     }
                 }
             }
+            else{
+                for (long i = p - 1; i > -1; i--){
+                    if (pathsFound[i]){
+                        augmentingPaths++;
+                        allDfsDone = false;
+                        nrPathsFound[i]++;
+
+                        long pathStartIndex = i * (m + n);
+                        bool pathAccepted = true;
+                        
+                        for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
+                            if (j % 2 == 0){
+                                if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
+                                    pathAccepted = false;
+                                }
+                            }
+                            else{
+                                if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
+                                    pathAccepted = false;
+                                }
+                            }
+                        }
+
+                        if (pathAccepted){
+                            acceptedPaths++;
+                            finalVerticesV[paths[pathStartIndex]] = false;
+
+                            for (long j = 0; j < pathIndices[i]; j++){
+                                if (j % 2 == 0){
+                                    vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
+                                }
+                                else{
+                                    ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
+                                }
+                            }
+                        }
+                        else{
+                            rejectedPaths++;
+                        }
+                    }
+                }
+            }   
 
             for (long i = 0 ; i < pathIndex + 1; i++){
                 path[i] = -1;
             }
+
+            dfsRoundCounter++;
         }
 
         double finalDfsTime = bsp_time();
-
-        roundCounter++;
 
         long newMatchingCount = 0;
 
@@ -552,6 +607,10 @@ void bsphk(){
         }
 
         double endTime = bsp_time();
+
+        if (s == 0){
+            printf("In round %ld, %ld augmenting paths were found, resulting in %ld new matchings\n", roundCounter, augmentingPaths, newMatchingCount - oldMatchingCount);
+        }
 
         if (newMatchingCount == oldMatchingCount || newMatchingCount == maxMatchingCount){
             done = true;
@@ -605,6 +664,8 @@ void bsphk(){
                     printf("ERROR!\n");
                 }
             }
+
+            break;
         }
 
         oldMatchingCount = newMatchingCount;
@@ -623,6 +684,8 @@ void bsphk(){
             bfsDones[i] = false;
             pathsFound[i] = false;
         }
+
+        roundCounter++;
     }
 
     bsp_pop_reg(currentVerticesUs);
