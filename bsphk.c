@@ -23,7 +23,20 @@ void bsphk(){
     long n= N;
     long counter= 0;
 
-    printf("proc: %d, M: %d, m: %d\n", s, M, m);
+    printf("pre proc: %d, M: %d, m: %d\n", s, M, m);
+
+    bsp_push_reg(&m, sizeof(long));
+    bsp_sync();
+
+    if (s == 0){
+        for (int i = 0; i < p; i++){
+            bsp_put(i, &m, &m, 0, sizeof(long));
+        }
+    }
+
+    bsp_sync();
+
+    printf("post proc: %d, M: %d, m: %d\n", s, M, m);
 
     // storing matrix as vector
     // with 0..(m-1) the connections from 1 in u to 1..m in v
@@ -71,6 +84,8 @@ void bsphk(){
                 }
             }
         }
+
+        printf("Matrix created, now distributing\n");
 
         for (int i = 0; i < p; i++){
             bsp_put(i, edges, edges, 0, m * m * sizeof(long));
