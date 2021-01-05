@@ -38,6 +38,8 @@ void bsphk(){
         edges[i] = 0;
     }
 
+    printf("p: %d, s: %d, m: &d\n", p, s, m, n);
+
     printf("Create edge matrix\n");
 
     if (s == 0){
