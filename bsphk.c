@@ -2,13 +2,13 @@
 #include "time.h"
 #include "bspedupack.h"
 
-/*  This program computes the primes up to a given number
-    using a prime number sieve.
-    The distribution of the sieve is by block
+/*  This program uses the Hopcroft-Karp algorithm
+    to produce a maximum matching for a bipartite graph
 */
 
-long M; // number of vertices
-long N; // approximation of matrix denseness (1=~ 20%, 2=~50%, 3=~ 80%)
+long M; // number of U nodes
+long N; // number of V nodes
+long D; // approximation of matrix density (1=~ 20%, 2=~50%, 3=~ 80%)
 long P; // number of processors requested
 
 void bsphk(){
@@ -21,74 +21,71 @@ void bsphk(){
     long s= bsp_pid();    // s = processor number
     long m= M;
     long n= N;
+    long d= D;
     long counter= 0;
 
-    printf("pre proc: %d, M: %d, m: %d\n", s, M, m);
-
     bsp_push_reg(&m, sizeof(long));
+    bsp_push_reg(&n, sizeof(long));
     bsp_sync();
 
     if (s == 0){
         for (int i = 0; i < p; i++){
             bsp_put(i, &m, &m, 0, sizeof(long));
+            bsp_put(i, &n, &n, 0, sizeof(long));
         }
     }
 
     bsp_sync();
+    bsp_pop_reg(&m);
+    bsp_pop_reg(&n);
 
-    printf("post proc: %d, M: %d, m: %d\n", s, M, m);
+    // n = m;
 
     // storing matrix as vector
-    // with 0..(m-1) the connections from 1 in u to 1..m in v
-    long *edges= vecalloci(m * m);
-    bsp_push_reg(edges, m * m * sizeof(long));
+    // with 0..(n-1) the connections from 1 in u to 1..n in v
+    long *edges= vecalloci(m * n);
+    bsp_push_reg(edges, m * n * sizeof(long));
 
     // u stores for the u nodes with v nodes they are connected to.
     long *u = vecalloci(m);
-    long *v = vecalloci(m);
+    long *v = vecalloci(n);
 
     bsp_sync();
 
-    for (long i = 0; i < m * m; i++){
+    for (long i = 0; i < m * n; i++){
         edges[i] = 0;
     }
-
-    printf("p: %d, s: %d, M: %d, m: %d\n", p, s, M, m);
-
-    printf("Create edge matrix\n");
 
     if (s == 0){
         srand(time(NULL));
         
         for (long r = 0; r < m; r++){
-            for (long c = 0; c < m; c++){
+            for (long c = 0; c < n; c++){
                 long temp = rand();
 
-                if (n == 1){
+                if (d == 1){
                     if (temp % 5 == 4){
-                        edges[r * m + c] = 1;
+                        edges[r * n + c] = 1;
                         counter++;
                     }
                 }
-                else if (n == 2){
+                else if (d == 2){
                     if (temp % 2 == 1){
-                        edges[r * m + c] = 1;
+                        edges[r * n + c] = 1;
                         counter++;
                     }
                 }
                 else{
                     if (temp % 5 > 0){
-                        edges[r * m + c] = 1;
+                        edges[r * n + c] = 1;
                         counter++;
                     }
                 }
             }
         }
 
-        printf("Matrix created, now distributing\n");
-
         for (int i = 0; i < p; i++){
-            bsp_put(i, edges, edges, 0, m * m * sizeof(long));
+            bsp_put(i, edges, edges, 0, m * n * sizeof(long));
         }
     }
 
@@ -97,52 +94,58 @@ void bsphk(){
 
     for (long i = 0; i < m; i++){
         u[i] = -1;
+    }
+
+    for (long i = 0; i < n; i++){
         v[i] = -1;
     }
 
     // ul and vl are the local/in progress versions of u and v
     long *ul = vecalloci(m);
-    long *vl = vecalloci(m);
+    long *vl = vecalloci(n);
 
-    bool *visitedVerticesV = vecallocb(m);
+    bool *visitedVerticesV = vecallocb(n);
 
     bool *currentVerticesU = vecallocb(m);
-    bool *currentVerticesV = vecallocb(m);
+    bool *currentVerticesV = vecallocb(n);
 
     bool *currentVerticesUs = vecallocb(p * m);
-    bool *currentVerticesVs = vecallocb(p * m);
+    bool *currentVerticesVs = vecallocb(p * n);
     bool *bfsDones = vecallocb(p);
-    long *paths = vecalloci(p * m * 2);
+    long *paths = vecalloci(p * (m + n));
     long *pathIndices = vecalloci(p);
     bool *pathsFound = vecallocb(p);
     bsp_push_reg(currentVerticesUs, p * m * sizeof(bool));
-    bsp_push_reg(currentVerticesVs, p * m * sizeof(bool));
+    bsp_push_reg(currentVerticesVs, p * n * sizeof(bool));
     bsp_push_reg(bfsDones, p * sizeof(bool));
-    bsp_push_reg(paths, p * m * 2 * sizeof(long));
+    bsp_push_reg(paths, p * (m + n) * sizeof(long));
     bsp_push_reg(pathIndices, p * sizeof(long));
     bsp_push_reg(pathsFound, p * sizeof(bool));
     bsp_sync();
 
     bool *layerUHasEdges = vecallocb(m);
-    bool *layerVHasEdges = vecallocb(m);
+    bool *layerVHasEdges = vecallocb(n);
 
     for (long i = 0; i < m; i++){
         layerUHasEdges[i] = false;
+    }
+
+    for (long i = 0; i < n; i++){
         layerVHasEdges[i] = false;
     }
 
-    bool *finalVerticesV = vecallocb(m);
+    bool *finalVerticesV = vecallocb(n);
 
-    long *bfsLayers = vecalloci(2 * m);
-    long *bfsResult = vecalloci(m * m);
+    long *bfsLayers = vecalloci(m + n);
+    long *bfsResult = vecalloci(m * n);
 
-    long *path = vecalloci(2 * m);
+    long *path = vecalloci(m + n);
 
     long oldMatchingCount = 0;
 
     for (long i = 0; i < m; i++){
-        for (long j = 0; j < m; j++){
-            if (edges[m * i + j] == 1){
+        for (long j = 0; j < n; j++){
+            if (edges[n * i + j] == 1){
                 layerUHasEdges[i] = true;
                 layerVHasEdges[j] = true;
             }
@@ -157,6 +160,9 @@ void bsphk(){
         if (layerUHasEdges[i]){
             maximumUMatchings++;
         }
+    }
+
+    for (long i = 0; i < n; i++){
         if (layerVHasEdges[i]){
             maximumVMatchings++;
         }
@@ -166,8 +172,6 @@ void bsphk(){
     if (maximumVMatchings < maxMatchingCount){
         maxMatchingCount = maximumVMatchings;
     }
-
-    printf("Starting HK\n");
 
     bool done = false;
 
@@ -179,8 +183,11 @@ void bsphk(){
 
         for (long i = 0; i < m; i++){
             ul[i] = u[i];
-            vl[i] = v[i];
             currentVerticesU[i] = false;
+        }
+
+        for (long i = 0; i < n; i++){
+            vl[i] = v[i];
             currentVerticesV[i] = false;
             visitedVerticesV[i] = false;
             finalVerticesV[i] = false;
@@ -192,8 +199,8 @@ void bsphk(){
             if (layerUHasEdges[i] && ul[i] == -1){
                 currentVerticesU[i] = true;
 
-                for (long j = 0; j < m; j++){
-                    if (edges[i * m + j] == 1){
+                for (long j = 0; j < n; j++){
+                    if (edges[i * n + j] == 1){
                         currentVerticesV[j] = true;
 
                         if (vl[j] == -1){
@@ -206,11 +213,13 @@ void bsphk(){
 
         for (long i = 0; i < p; i++){
             bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
-            bsp_put(i, currentVerticesV, currentVerticesVs, s * m * sizeof(bool), m * sizeof(bool));
+            bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
             bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
         }
 
         bsp_sync();
+
+        bfsDone = false;
 
         for (long i = 0; i < p; i++){
             if (bfsDones[i]){
@@ -241,11 +250,13 @@ void bsphk(){
 
         for (long i = 0; i < m; i++){
             currentVerticesU[i] = false;
+        }
 
+        for (long i = 0; i < n; i++){
             bool vertexVisited = false;
 
             for (long j = 0; j < p; j++){
-                if (currentVerticesVs[j * m + i]){
+                if (currentVerticesVs[j * n + i]){
                     vertexVisited = true;
                 }
             }
@@ -274,12 +285,10 @@ void bsphk(){
         
         bool bfsCanContinue = true;
 
-        printf("Round Zero BFS Done\n");
-
         while (!bfsDone && bfsCanContinue){
             // layer % 2 == 0 means we're in V and need to get to U over a matched edge
             if (layer % 2 == 0){
-                for (long i = s; i < m; i += p){
+                for (long i = s; i < n; i += p){
                     if (currentVerticesV[i]){
                         currentVerticesU[vl[i]] = true;
                     }
@@ -291,9 +300,11 @@ void bsphk(){
 
                 bsp_sync();
 
-                for (long i = 0; i < m; i++){
+                for (long i = 0; i < n; i++){
                     currentVerticesV[i] = false;
+                }
 
+                for (long i = 0; i < m; i++){
                     bool vertexVisited = false;
 
                     for (long j = 0; j < p; j++){
@@ -312,8 +323,8 @@ void bsphk(){
             else{
                 for (long i = s; i < m; i += p){
                     if (currentVerticesU[i]){
-                        for (long j = 0; j < m; j++){
-                            if (!visitedVerticesV[j] && edges[i * m + j] == 1 && ul[i] != j){
+                        for (long j = 0; j < n; j++){
+                            if (!visitedVerticesV[j] && edges[i * n + j] == 1 && ul[i] != j){
                                 currentVerticesV[j] = true;
 
                                 if (vl[j] == -1){
@@ -325,11 +336,13 @@ void bsphk(){
                 }
 
                 for (long i = 0; i < p; i++){
-                    bsp_put(i, currentVerticesV, currentVerticesVs, s * m * sizeof(bool), m * sizeof(bool));
+                    bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
                     bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
                 }
 
                 bsp_sync();
+
+                bfsDone = false;
 
                 for (long i = 0; i < p; i++){
                     if (bfsDones[i]){
@@ -339,11 +352,13 @@ void bsphk(){
 
                 for (long i = 0; i < m; i++){
                     currentVerticesU[i] = false;
+                }
 
+                for (long i = 0; i < n; i++){
                     bool vertexVisited = false;
 
                     for (long j = 0; j < p; j++){
-                        if (currentVerticesVs[j * m + i]){
+                        if (currentVerticesVs[j * n + i]){
                             vertexVisited = true;
                         }
                     }
@@ -372,21 +387,26 @@ void bsphk(){
             bfsCanContinue = false;
 
             for (long i = 0; i < m; i++){
-                if (currentVerticesU[i] || currentVerticesV[i]){
+                if (currentVerticesU[i]){
+                    bfsCanContinue = true;
+                    break;
+                }
+            }
+
+            for (long i = 0; i < n; i++){
+                if (currentVerticesV[i]){
                     bfsCanContinue = true;
                     break;
                 }
             }
         }
 
-        printf("BFS Done\n");
-
         bool allDfsDone = false;
 
         while (!allDfsDone){
             bool pathFound = false;
             long pathIndex = 0;
-            for (long i = s; i < m; i += p){
+            for (long i = s; i < n; i += p){
                 if (!pathFound && finalVerticesV[i]){
                     long uIndex = 0;
                     long vIndex = i;
@@ -403,7 +423,7 @@ void bsphk(){
                                 uIndex = bfsResult[k];
                                 vIndex = path[pathIndex - 1];
 
-                                if (ul[uIndex] == u[uIndex] && edges[uIndex * m + vIndex] == 1){
+                                if (ul[uIndex] == u[uIndex] && edges[uIndex * n + vIndex] == 1){
                                     path[pathIndex] = uIndex;
                                     pathIndex++;
 
@@ -442,7 +462,7 @@ void bsphk(){
             }
 
             for (long i = 0; i < p; i++){
-                bsp_put(i, path, paths, s * 2 * m * sizeof(long), 2 * m * sizeof(long));
+                bsp_put(i, path, paths, s * (m + n) * sizeof(long), (m + n) * sizeof(long));
                 bsp_put(i, &pathIndex, pathIndices, s * sizeof(long), sizeof(long));
                 bsp_put(i, &pathFound, pathsFound, s * sizeof(bool), sizeof(bool));
             }
@@ -455,7 +475,7 @@ void bsphk(){
                 if (pathsFound[i]){
                     allDfsDone = false;
 
-                    long pathStartIndex = i * 2 * m;
+                    long pathStartIndex = i * (m + n);
                     bool pathAccepted = true;
                     
                     for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
@@ -491,17 +511,18 @@ void bsphk(){
             }
         }
 
-        printf("DFS Done\n");
-
         long newMatchingCount = 0;
 
         for (long i = 0; i < m; i++){
             u[i] = ul[i];
-            v[i] = vl[i];
 
             if (u[i] != -1){
                 newMatchingCount++;
             }
+        }
+
+        for (long i = 0; i < n; i++){
+            v[i] = vl[i];
         }
 
         if (newMatchingCount == oldMatchingCount || newMatchingCount == maxMatchingCount){
@@ -517,8 +538,8 @@ void bsphk(){
                     printf("MATRIX\n");
 
                     for (long i = 0; i < m; i++){
-                        for (long j = 0; j < m; j++){
-                            if (edges[i * m + j] == 1){
+                        for (long j = 0; j < n; j++){
+                            if (edges[i * n + j] == 1){
                                 printf("%d, %d connected\n", i, j);
                             }
                         }
@@ -530,7 +551,7 @@ void bsphk(){
 
                         printf("Vertex %d in U connected to vertex %d in V\n", i, ul[i]);
 
-                        if (edges[m * i + ul[i]] != 1 && ul[i] != -1){
+                        if (edges[n * i + ul[i]] != 1 && ul[i] != -1){
                             error = true;
                         }
                     }
@@ -596,16 +617,22 @@ int main(int argc, char **argv){
     bsp_init(bsphk, argc, argv);
 
     /* Sequential part for M*/
-    printf("How many vertices on either side of the bipartite graph?\n");
+    printf("How many vertices on the left side of the bipartite graph?\n");
     fflush(stdout);
 
     scanf("%ld",&M);
 
     /* Sequential part for N*/
-    printf("How many edges per vertex as percentage of possible connections?\n1~20%%, 2~50%%, 3~80%%.\n");
+    printf("How many vertices on the right side of the bipartite graph?\n");
     fflush(stdout);
 
     scanf("%ld",&N);
+
+    /* Sequential part for N*/
+    printf("How many edges per vertex as percentage of possible connections?\n1~20%%, 2~50%%, 3~80%%.\n");
+    fflush(stdout);
+
+    scanf("%ld",&D);
     
     /* Sequential part for P*/
     printf("How many processors do you want to use?\n");
