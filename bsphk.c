@@ -533,7 +533,7 @@ void bsphk(){
             }
         }
 
-        bool finalDfsTime = bsp_time();
+        double finalDfsTime = bsp_time();
 
         roundCounter++;
 
@@ -550,6 +550,8 @@ void bsphk(){
         for (long i = 0; i < n; i++){
             v[i] = vl[i];
         }
+
+        double endTime = bsp_time();
 
         if (newMatchingCount == oldMatchingCount || newMatchingCount == maxMatchingCount){
             done = true;
@@ -584,6 +586,9 @@ void bsphk(){
                     printf("MATCHING\n");
 
                     printf("Found a maximum matching of size %ld\n", newMatchingCount);
+
+                    printf("Final timing\n");
+                    printf("In total the algorith took %.6lf seconds\n", endTime - outerLoopStartTime);
 
                     // printf("NEW MATCHING\n");
 
