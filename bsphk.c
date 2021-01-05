@@ -38,6 +38,8 @@ void bsphk(){
         edges[i] = 0;
     }
 
+    printf("Create edge matrix\n");
+
     if (s == 0){
         srand(time(NULL));
         
