@@ -23,6 +23,8 @@ void bsphk(){
     long n= N;
     long counter= 0;
 
+    printf("proc: %d, M: %d, m: %d\n", s, M, m);
+
     // storing matrix as vector
     // with 0..(m-1) the connections from 1 in u to 1..m in v
     long *edges= vecalloci(m * m);
@@ -38,7 +40,7 @@ void bsphk(){
         edges[i] = 0;
     }
 
-    printf("p: %d, s: %d, m: &d\n", p, s, m, n);
+    printf("p: %d, s: %d, M: %d, m: %d\n", p, s, M, m);
 
     printf("Create edge matrix\n");
 
