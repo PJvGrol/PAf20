@@ -180,6 +180,7 @@ void bsphk(){
 
     long *nrPathsFound = vecalloci(p);
 
+    long totalPaths = 0;
     long acceptedPaths = 0;
     long rejectedPaths = 0;
 
@@ -427,6 +428,8 @@ void bsphk(){
         bool allDfsDone = false;
 
         long augmentingPaths = 0;
+        long augmentingPathsAccepted = 0;
+        long augmentingPathsRejected = 0;
         long dfsRoundCounter = 0;
 
         while (!allDfsDone){
@@ -502,6 +505,7 @@ void bsphk(){
                 for (long i = 0; i < p; i++){
                     if (pathsFound[i]){
                         augmentingPaths++;
+                        totalPaths++;
                         allDfsDone = false;
                         nrPathsFound[i]++;
 
@@ -523,6 +527,7 @@ void bsphk(){
 
                         if (pathAccepted){
                             acceptedPaths++;
+                            augmentingPathsAccepted++;
                             finalVerticesV[paths[pathStartIndex]] = false;
 
                             for (long j = 0; j < pathIndices[i]; j++){
@@ -536,6 +541,7 @@ void bsphk(){
                         }
                         else{
                             rejectedPaths++;
+                            augmentingPathsRejected++;
                         }
                     }
                 }
@@ -544,6 +550,7 @@ void bsphk(){
                 for (long i = p - 1; i > -1; i--){
                     if (pathsFound[i]){
                         augmentingPaths++;
+                        totalPaths++;
                         allDfsDone = false;
                         nrPathsFound[i]++;
 
@@ -565,6 +572,7 @@ void bsphk(){
 
                         if (pathAccepted){
                             acceptedPaths++;
+                            augmentingPathsAccepted++;
                             finalVerticesV[paths[pathStartIndex]] = false;
 
                             for (long j = 0; j < pathIndices[i]; j++){
@@ -578,6 +586,7 @@ void bsphk(){
                         }
                         else{
                             rejectedPaths++;
+                            augmentingPathsRejected++;
                         }
                     }
                 }
@@ -588,6 +597,11 @@ void bsphk(){
             }
 
             dfsRoundCounter++;
+        }
+
+        if (s == 0){
+            printf("In round %ld a total of %ld augmenting paths were found of length %ld\n", roundCounter, augmentingPaths, layer);
+            printf("Of these paths %ld were accepted and therefore %ld rejected\n", augmentingPathsAccepted, augmentingPathsRejected);
         }
 
         double finalDfsTime = bsp_time();
@@ -625,6 +639,8 @@ void bsphk(){
 
                     printf("A total of %ld BFS communication related supersteps occurred\n", bfsSuperSteps);
                     printf("A total of %ld DFS communication related supersteps occurred\n", dfsSuperSteps);
+
+                    printf("In total %ld augmenting paths were found, %ld accepted and %ld rejected\n", totalPaths, acceptedPaths, rejectedPaths);
 
                     for (long i = 0; i < p; i++){
                         printf("Proc %ld found a total of %ld augmenting paths\n", i, nrPathsFound[i]);
@@ -715,6 +731,7 @@ void bsphk(){
     vecfreei(bfsLayers);
     vecfreei(bfsResult);
     vecfreei(path);
+    vecfreei(nrPathsFound);
 
     bsp_end();
 
