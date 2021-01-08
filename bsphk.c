@@ -6,6 +6,7 @@
     to produce a maximum matching for a bipartite graph
 */
 
+long F; // 0 = no improv, 1 = in-process, 2 = between-rounds, 3 = both
 long M; // number of U nodes
 long N; // number of V nodes
 long D; // approximation of matrix density (1=~ 20%, 2=~50%, 3=~ 80%)
@@ -17,25 +18,43 @@ void bsphk(){
 
     long p= bsp_nprocs(); // p = number of processors
     long s= bsp_pid();    // s = processor number
+    long f= F;
     long m= M;
     long n= N;
     long d= D;
     long counter= 0;
 
+    bsp_push_reg(&f, sizeof(long));
     bsp_push_reg(&m, sizeof(long));
     bsp_push_reg(&n, sizeof(long));
     bsp_sync();
 
     if (s == 0){
         for (int i = 0; i < p; i++){
+            bsp_put(i, &f, &f, 0, sizeof(long));
             bsp_put(i, &m, &m, 0, sizeof(long));
             bsp_put(i, &n, &n, 0, sizeof(long));
         }
     }
 
     bsp_sync();
+    bsp_pop_reg(&f);
     bsp_pop_reg(&m);
     bsp_pop_reg(&n);
+
+    bool preProcessing = false;
+    bool postProcessing = false;
+
+    if (f == 1){
+        preProcessing = true;
+    }
+    if (f == 2){
+        postProcessing = true;
+    }
+    if (f == 3){
+        preProcessing = true;
+        postProcessing = true;
+    }
 
     // n = m;
 
@@ -139,6 +158,8 @@ void bsphk(){
 
     long *path = vecalloci(m + n);
 
+
+    long newMatchingCount = 0;
     long oldMatchingCount = 0;
 
     for (long i = 0; i < m; i++){
@@ -186,6 +207,337 @@ void bsphk(){
 
     for (long i = 0; i < p; i++){
         nrPathsFound[i] = 0;
+    }
+
+    double preProcessingStart = bsp_time();
+
+    if (preProcessing){
+        // Perform HK within the boundaries of the thread
+        bool preProcessingDone = false;
+
+        while (!preProcessingDone){
+            bool preBfsDone = false;
+
+            long layer = 0;
+            long index = 0;
+
+            for (long i = 0; i < m; i++){
+                ul[i] = u[i];
+                currentVerticesU[i] = false;
+            }
+
+            for (long i = 0; i < n; i++){
+                vl[i] = v[i];
+                currentVerticesV[i] = false;
+                visitedVerticesV[i] = false;
+                finalVerticesV[i] = false;
+            }
+
+            // Layer 0 and 1 of BFS, cyclic distr.
+
+            for (long i = s; i < m; i += p){
+                if (layerUHasEdges[i] && ul[i] == -1){
+                    currentVerticesU[i] = true;
+
+                    for (long j = s; j < n; j += p){
+                        if (edges[i * n + j] == 1){
+                            currentVerticesV[j] = true;
+
+                            if (vl[j] == -1){
+                                preBfsDone = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            bfsLayers[layer] = index;
+
+            for (long i = 0; i < m; i++){
+                bool vertexVisited = currentVerticesU[i];
+
+                if (vertexVisited){
+                    bfsResult[index] = i;
+                    index++;
+                }
+            }
+
+            layer++;
+            bfsLayers[layer] = index;
+
+            for (long i = 0; i < m; i++){
+                currentVerticesU[i] = false;
+            }
+
+            for (long i = 0; i < n; i++){
+                bool vertexVisited = currentVerticesV[i];
+
+                if (vertexVisited){
+                    if (preBfsDone && vl[i] == -1){
+                        finalVerticesV[i] = true;
+                        bfsResult[index] = i;
+                        index++;
+                    }
+                    else if (!preBfsDone){
+                        bfsResult[index] = i;
+                        index++;
+                    }
+                }
+            }
+
+            layer++;
+            bfsLayers[layer] = index;
+
+            bool preBfsCanContinue = true;
+
+            while (!preBfsDone && preBfsCanContinue){
+                // layer % 2 == 0 means we're in V and need to get to U over a matched edge
+                if (layer % 2 == 0){
+                    for (long i = s; i < n; i += p){
+                        if (currentVerticesV[i] && vl[i] % p == s){
+                            currentVerticesU[vl[i]] = true;
+                            bfsResult[index] = i;
+                            index++;
+                        }
+                    }
+
+                    for (long i = 0; i < n; i++){
+                        currentVerticesV[i] = false;
+                    }
+                }
+                else{
+                    for (long i = s; i < m; i += p){
+                        if (currentVerticesU[i]){
+                            for (long j = s; j < n; j += p){
+                                if (!visitedVerticesV[j] && edges[i * n + j] == 1 && ul[i] != j){
+                                    currentVerticesV[j] = true;
+                                    visitedVerticesV[j] = true;
+                                    bfsResult[index] = j;
+                                    index++;
+
+                                    if (vl[j] == -1){
+                                        preBfsDone = true;
+                                        finalVerticesV[j] = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    for (long i = 0; i < m; i++){
+                        currentVerticesU[i] = false;
+                    }
+                }
+
+                layer++;
+                bfsLayers[layer] = index;
+
+                preBfsCanContinue = false;
+
+                for (long i = s; i < m; i += p){
+                    if (currentVerticesU[i]){
+                        preBfsCanContinue = true;
+                        break;
+                    }
+                }
+
+                for (long i = s; i < n; i += p){
+                    if (currentVerticesV[i]){
+                        preBfsCanContinue = true;
+                        break;
+                    }
+                }
+            }
+
+            bool preDfsDone = false;
+
+            long preAugmentingPaths = 0;
+            long preAugmentingPathsAccepted = 0;
+            long preAugmentingPathsRejected = 0;
+
+            while (!preDfsDone){
+                bool prePathFound = false;
+                long prePathIndex = 0;
+                for (long i = s; i < n; i += p){
+                    if (!prePathFound && finalVerticesV[i]){
+                        long uIndex = 0;
+                        long vIndex = i;
+
+                        path[0] = vIndex;
+                        prePathIndex = 1;
+                        
+                        for (long j = layer - 2; j > -1; j--){
+                            long startIndex = bfsLayers[j];
+                            long endIndex = bfsLayers[j + 1];
+
+                            for (long k = startIndex; k < endIndex; k++){
+                                if (j % 2 == 0){
+                                    uIndex = bfsResult[k];
+                                    vIndex = path[prePathIndex - 1];
+
+                                    if (ul[uIndex] == u[uIndex] && edges[uIndex * n + vIndex] == 1){
+                                        path[prePathIndex] = uIndex;
+                                        prePathIndex++;
+
+                                        if (ul[uIndex] == -1){
+                                            prePathFound = true;
+                                        }
+
+                                        break;
+                                    }
+                                }
+                                else{
+                                    uIndex = path[prePathIndex - 1];
+                                    vIndex = bfsResult[k];
+
+                                    if (vl[vIndex] == v[vIndex] && vl[vIndex] == uIndex){
+                                        path[prePathIndex] = vIndex;
+                                        prePathIndex++;
+
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (prePathFound){
+                                break;
+                            }
+                        }
+
+                        if (prePathFound){
+                            break;
+                        }
+                        else{
+                            finalVerticesV[i] = false;
+                        }
+                    }
+                }
+
+                preDfsDone = true;
+
+                if (prePathFound){
+                    preAugmentingPaths++;
+                    totalPaths++;
+                    preDfsDone = false;
+                    nrPathsFound[s]++;
+
+                    long pathStartIndex = 0;
+                    bool pathAccepted = true;
+                    
+                    for (long j = 0; j < prePathIndex && pathAccepted; j++){
+                        if (j % 2 == 0){
+                            if (vl[path[pathStartIndex + j]] != v[path[pathStartIndex + j]]){
+                                pathAccepted = false;
+                            }
+                        }
+                        else{
+                            if (ul[path[pathStartIndex + j]] != u[path[pathStartIndex + j]]){
+                                pathAccepted = false;
+                            }
+                        }
+                    }
+
+                    if (pathAccepted){
+                        acceptedPaths++;
+                        preAugmentingPathsAccepted++;
+                        finalVerticesV[path[pathStartIndex]] = false;
+
+                        for (long j = 0; j < prePathIndex; j++){
+                            if (j % 2 == 0){
+                                vl[path[pathStartIndex + j]] = path[pathStartIndex + j + 1];
+                            }
+                            else{
+                                ul[path[pathStartIndex + j]] = path[pathStartIndex + j - 1];
+                            }
+                        }
+                    }
+                    else{
+                        rejectedPaths++;
+                        preAugmentingPathsRejected++;
+                    }
+                }
+
+                for (long i = 0 ; i < prePathIndex + 1; i++){
+                    path[i] = -1;
+                }
+            }
+
+            newMatchingCount = 0;
+
+            for (long i = 0; i < m; i++){
+                u[i] = ul[i];
+
+                if (u[i] != -1){
+                    newMatchingCount++;
+                }
+            }
+
+            for (long i = 0; i < n; i++){
+                v[i] = vl[i];
+            }
+
+            if (newMatchingCount == oldMatchingCount || newMatchingCount == maxMatchingCount){
+                preProcessingDone = true;
+            }
+
+            oldMatchingCount = newMatchingCount;
+
+            long maxBfsIndex = bfsLayers[layer];
+
+            for (long i = 0; i < layer + 1; i++){
+                bfsLayers[i] = -1;
+            }
+
+            for (long i = 0; i < maxBfsIndex + 1; i++){
+                bfsResult[i] = -1;
+            }
+        }
+
+        long *us = vecalloci(p * m);
+        long *vs = vecalloci(p * n);
+
+        bsp_push_reg(us, p * m * sizeof(long));
+        bsp_push_reg(vs, p * n * sizeof(long));
+        bsp_push_reg(nrPathsFound, p * sizeof(long));
+        bsp_sync();
+
+        long tempNrPathsFound = nrPathsFound[s];
+
+        for (long i = 0; i < p; i++){
+            bsp_put(i, u, us, s * m * sizeof(long), m * sizeof(long));
+            bsp_put(i, v, vs, s * n * sizeof(long), n * sizeof(long));
+            bsp_put(i, &tempNrPathsFound, nrPathsFound, s * sizeof(long), sizeof(long));
+        }
+
+        bsp_sync();
+
+        for (long i = 0; i < p; i++){
+            for (long j = i; j < m; j += p){
+                u[j] = us[i * m + j];
+            }
+            for (long j = i; j < n; j += p){
+                v[j] = vs[i * n + j];
+            }
+        }
+
+        bsp_pop_reg(us);
+        bsp_pop_reg(vs);
+
+        vecfreei(us);
+        vecfreei(vs);
+
+        bsp_sync();
+
+        if (s == 0){
+            long tempMatchingCount = 0;
+            for (long i = 0; i < m; i++){
+                if (u[i] > -1){
+                    tempMatchingCount++;
+                }
+            }
+            printf("Preprocessing produced an initial matching of size %ld\n", tempMatchingCount);
+            oldMatchingCount = tempMatchingCount;
+        }
     }
 
     double outerLoopStartTime = bsp_time();
@@ -606,7 +958,7 @@ void bsphk(){
 
         double finalDfsTime = bsp_time();
 
-        long newMatchingCount = 0;
+        newMatchingCount = 0;
 
         for (long i = 0; i < m; i++){
             u[i] = ul[i];
@@ -663,7 +1015,13 @@ void bsphk(){
                     printf("Found a maximum matching of size %ld\n", newMatchingCount);
 
                     printf("Final timing\n");
-                    printf("In total the algorith took %.6lf seconds\n", endTime - outerLoopStartTime);
+                    if (preProcessing){
+                        printf("In total the preprocessing step took %.6lf seconds\n", outerLoopStartTime - preProcessingStart);
+                        printf("In total the algorith took %.6lf seconds\n", endTime - preProcessingStart);
+                    }
+                    else{
+                        printf("In total the algorith took %.6lf seconds\n", endTime - outerLoopStartTime);
+                    }
 
                     // printf("NEW MATCHING\n");
 
@@ -740,6 +1098,12 @@ void bsphk(){
 int main(int argc, char **argv){
 
     bsp_init(bsphk, argc, argv);
+
+    /* Sequential part for F*/
+    printf("Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both\n");
+    fflush(stdout);
+
+    scanf("%ld",&F);
 
     /* Sequential part for M*/
     printf("How many vertices on the left side of the bipartite graph?\n");
