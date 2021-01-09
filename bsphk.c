@@ -163,6 +163,7 @@ void bsphk(){
     long *bfsResult = vecalloci(m * n);
 
     long *path = vecalloci(m + n);
+    long *pathTracking = vecalloci(m + n);
 
 
     long newMatchingCount = 0;
@@ -371,17 +372,28 @@ void bsphk(){
             while (!preDfsDone){
                 bool prePathFound = false;
                 long prePathIndex = 0;
+
                 for (long i = s; i < n; i += p){
                     if (!prePathFound && finalVerticesV[i]){
                         long uIndex = 0;
                         long vIndex = i;
 
                         path[0] = vIndex;
+                        pathTracking[0] = vIndex;
                         prePathIndex = 1;
+
+                        bool progress = true;
                         
                         for (long j = layer - 2; j > -1; j--){
                             long startIndex = bfsLayers[j];
                             long endIndex = bfsLayers[j + 1];
+
+                            if (!progress){
+                                startIndex = pathTracking[prePathIndex] + 1;
+                                pathTracking[prePathIndex] = -1;
+                            }
+
+                            progress = false;
 
                             for (long k = startIndex; k < endIndex; k++){
                                 if (j % 2 == 0){
@@ -390,7 +402,9 @@ void bsphk(){
 
                                     if (ul[uIndex] == u[uIndex] && edges[uIndex * n + vIndex] == 1){
                                         path[prePathIndex] = uIndex;
+                                        pathTracking[prePathIndex] = k;
                                         prePathIndex++;
+                                        progress = true;
 
                                         if (ul[uIndex] == -1){
                                             prePathFound = true;
@@ -405,7 +419,9 @@ void bsphk(){
 
                                     if (vl[vIndex] == v[vIndex] && vl[vIndex] == uIndex){
                                         path[prePathIndex] = vIndex;
+                                        pathTracking[prePathIndex] = k;
                                         prePathIndex++;
+                                        progress = true;;
 
                                         break;
                                     }
@@ -414,6 +430,16 @@ void bsphk(){
 
                             if (prePathFound){
                                 break;
+                            }
+
+                            if (!progress){
+                                if (j == layer - 2){
+                                    break;
+                                }
+
+                                j += 2;
+                                prePathIndex--;
+                                path[prePathIndex] = -1;
                             }
                         }
 
@@ -433,18 +459,16 @@ void bsphk(){
                     totalPaths++;
                     preDfsDone = false;
                     nrPathsFound[s]++;
-
-                    long pathStartIndex = 0;
                     bool pathAccepted = true;
                     
                     for (long j = 0; j < prePathIndex && pathAccepted; j++){
                         if (j % 2 == 0){
-                            if (vl[path[pathStartIndex + j]] != v[path[pathStartIndex + j]]){
+                            if (vl[path[j]] != v[path[j]]){
                                 pathAccepted = false;
                             }
                         }
                         else{
-                            if (ul[path[pathStartIndex + j]] != u[path[pathStartIndex + j]]){
+                            if (ul[path[j]] != u[path[j]]){
                                 pathAccepted = false;
                             }
                         }
@@ -453,14 +477,14 @@ void bsphk(){
                     if (pathAccepted){
                         acceptedPaths++;
                         preAugmentingPathsAccepted++;
-                        finalVerticesV[path[pathStartIndex]] = false;
+                        finalVerticesV[path[0]] = false;
 
                         for (long j = 0; j < prePathIndex; j++){
                             if (j % 2 == 0){
-                                vl[path[pathStartIndex + j]] = path[pathStartIndex + j + 1];
+                                vl[path[j]] = path[j + 1];
                             }
                             else{
-                                ul[path[pathStartIndex + j]] = path[pathStartIndex + j - 1];
+                                ul[path[j]] = path[j - 1];
                             }
                         }
                     }
@@ -472,6 +496,7 @@ void bsphk(){
 
                 for (long i = 0 ; i < prePathIndex + 1; i++){
                     path[i] = -1;
+                    pathTracking[i] = -1;
                 }
             }
 
@@ -815,11 +840,21 @@ void bsphk(){
                         long vIndex = i;
 
                         path[0] = vIndex;
+                        pathTracking[0] = vIndex;
                         pathIndex = 1;
+
+                        bool progress = true;
                         
                         for (long j = layer - 2; j > -1; j--){
                             long startIndex = bfsLayers[j];
                             long endIndex = bfsLayers[j + 1];
+
+                            if (!progress){
+                                startIndex = pathTracking[pathIndex] + 1;
+                                pathTracking[pathIndex] = -1;
+                            }
+
+                            progress = false;
 
                             for (long k = startIndex; k < endIndex; k++){
                                 if (j % 2 == 0){
@@ -828,7 +863,9 @@ void bsphk(){
 
                                     if (ul[uIndex] == u[uIndex] && edges[uIndex * n + vIndex] == 1){
                                         path[pathIndex] = uIndex;
+                                        pathTracking[pathIndex] = k;
                                         pathIndex++;
+                                        progress = true;
 
                                         if (ul[uIndex] == -1){
                                             pathFound = true;
@@ -843,7 +880,9 @@ void bsphk(){
 
                                     if (vl[vIndex] == v[vIndex] && vl[vIndex] == uIndex){
                                         path[pathIndex] = vIndex;
+                                        pathTracking[pathIndex] = k;
                                         pathIndex++;
+                                        progress = true;
 
                                         break;
                                     }
@@ -852,6 +891,16 @@ void bsphk(){
 
                             if (pathFound){
                                 break;
+                            }
+
+                            if (!progress){
+                                if (j == layer - 2){
+                                    break;
+                                }
+
+                                j += 2;
+                                pathIndex--;
+                                path[pathIndex] = -1;
                             }
                         }
 
