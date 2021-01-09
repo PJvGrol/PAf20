@@ -80,25 +80,22 @@ void bsphk(){
 
     if (s == 0){
         srand(time(NULL));
-        
-        for (long r = 0; r < m; r++){
+        if (m < n){
+            for (long r = 0; r < m; r++){
+                for (long c = 0; c < n; c++){
+                    long temp = rand();
+                    if (temp % (n / d) == 0){
+                        edges[r * n + c] = 1;
+                        counter++;
+                    }
+                }
+            }
+        }
+        else {            
             for (long c = 0; c < n; c++){
-                long temp = rand();
-
-                if (d == 1){
-                    if (temp % 5 == 4){
-                        edges[r * n + c] = 1;
-                        counter++;
-                    }
-                }
-                else if (d == 2){
-                    if (temp % 2 == 1){
-                        edges[r * n + c] = 1;
-                        counter++;
-                    }
-                }
-                else{
-                    if (temp % 5 > 0){
+                for (long r = 0; r < m; r++){
+                    long temp = rand();
+                    if (temp % (m / d) == 0){
                         edges[r * n + c] = 1;
                         counter++;
                     }
@@ -1324,7 +1321,7 @@ int main(int argc, char **argv){
     scanf("%ld",&N);
 
     /* Sequential part for N*/
-    printf("How many edges per vertex as percentage of possible connections?\n1~20%%, 2~50%%, 3~80%%.\n");
+    printf("How many edges per vertex on average?\n");
     fflush(stdout);
 
     scanf("%ld",&D);
