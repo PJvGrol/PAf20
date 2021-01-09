@@ -1304,14 +1304,12 @@ int main(int argc, char **argv){
     fflush(stdout);
 
     scanf("%ld",&F);
+    
+    /* Sequential part for F*/
+    printf("Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.\n");
+    fflush(stdout);
 
-    if (F > 1){
-        /* Sequential part for F*/
-        printf("Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.\n");
-        fflush(stdout);
-
-        scanf("%ld",&R);
-    }
+    scanf("%ld",&R);
 
     /* Sequential part for M*/
     printf("How many vertices on the left side of the bipartite graph?\n");
