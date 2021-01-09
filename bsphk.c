@@ -11,6 +11,7 @@ long M; // number of U nodes
 long N; // number of V nodes
 long D; // approximation of matrix density (1=~ 20%, 2=~50%, 3=~ 80%)
 long P; // number of processors requested
+long R; // Frequency of postprocessing
 
 void bsphk(){
     
@@ -19,6 +20,7 @@ void bsphk(){
     long p= bsp_nprocs(); // p = number of processors
     long s= bsp_pid();    // s = processor number
     long f= F;
+    long r= R;
     long m= M;
     long n= N;
     long d= D;
@@ -27,6 +29,7 @@ void bsphk(){
     bsp_push_reg(&f, sizeof(long));
     bsp_push_reg(&m, sizeof(long));
     bsp_push_reg(&n, sizeof(long));
+    bsp_push_reg(&r, sizeof(long));
     bsp_sync();
 
     if (s == 0){
@@ -34,6 +37,7 @@ void bsphk(){
             bsp_put(i, &f, &f, 0, sizeof(long));
             bsp_put(i, &m, &m, 0, sizeof(long));
             bsp_put(i, &n, &n, 0, sizeof(long));
+            bsp_put(i, &r, &r, 0, sizeof(long));
         }
     }
 
@@ -41,6 +45,7 @@ void bsphk(){
     bsp_pop_reg(&f);
     bsp_pop_reg(&m);
     bsp_pop_reg(&n);
+    bsp_pop_reg(&r);
 
     bool preProcessing = false;
     bool postProcessing = false;
@@ -121,7 +126,11 @@ void bsphk(){
     long *ul = vecalloci(m);
     long *vl = vecalloci(n);
 
+    bool *visitedVerticesU = vecallocb(m);
     bool *visitedVerticesV = vecallocb(n);
+
+    bool *disallowedVerticesU = vecallocb(m);
+    bool *disallowedVerticesV = vecallocb(n);
 
     bool *currentVerticesU = vecallocb(m);
     bool *currentVerticesV = vecallocb(n);
@@ -176,12 +185,14 @@ void bsphk(){
     long maximumVMatchings = 0;
 
     for (long i = 0; i < m; i++){
+        disallowedVerticesU[i] = false;
         if (layerUHasEdges[i]){
             maximumUMatchings++;
         }
     }
 
     for (long i = 0; i < n; i++){
+        disallowedVerticesV[i] = false;
         if (layerVHasEdges[i]){
             maximumVMatchings++;
         }
@@ -197,9 +208,14 @@ void bsphk(){
     long roundCounter = 1;
 
     long bfsSuperSteps = 0;
+    long bfsPostSuperSteps = 0;
     long dfsSuperSteps = 0;
 
+    double totalPostProcessingTime = 0;
+
     long *nrPathsFound = vecalloci(p);
+
+    long preMatchingCount = 0;
 
     long totalPaths = 0;
     long acceptedPaths = 0;
@@ -535,7 +551,7 @@ void bsphk(){
                     tempMatchingCount++;
                 }
             }
-            printf("Preprocessing produced an initial matching of size %ld\n", tempMatchingCount);
+            preMatchingCount = tempMatchingCount;
             oldMatchingCount = tempMatchingCount;
         }
     }
@@ -553,23 +569,24 @@ void bsphk(){
         for (long i = 0; i < m; i++){
             ul[i] = u[i];
             currentVerticesU[i] = false;
+            visitedVerticesU[i] = disallowedVerticesU[i];
         }
 
         for (long i = 0; i < n; i++){
             vl[i] = v[i];
             currentVerticesV[i] = false;
-            visitedVerticesV[i] = false;
+            visitedVerticesV[i] = disallowedVerticesV[i];
             finalVerticesV[i] = false;
         }
 
         // Layer 0 and 1 of BFS, cyclic distr.
 
         for (long i = s; i < m; i += p){
-            if (layerUHasEdges[i] && ul[i] == -1){
+            if (layerUHasEdges[i] && ul[i] == -1 && !visitedVerticesU[i]){
                 currentVerticesU[i] = true;
 
                 for (long j = 0; j < n; j++){
-                    if (edges[i * n + j] == 1){
+                    if (edges[i * n + j] == 1 && !visitedVerticesV[j]){
                         currentVerticesV[j] = true;
 
                         if (vl[j] == -1){
@@ -661,7 +678,7 @@ void bsphk(){
             // layer % 2 == 0 means we're in V and need to get to U over a matched edge
             if (layer % 2 == 0){
                 for (long i = s; i < n; i += p){
-                    if (currentVerticesV[i]){
+                    if (currentVerticesV[i] && !visitedVerticesU[vl[i]]){
                         currentVerticesU[vl[i]] = true;
                     }
                 }
@@ -784,7 +801,7 @@ void bsphk(){
         long augmentingPathsRejected = 0;
         long dfsRoundCounter = 0;
 
-        while (!allDfsDone){
+        while (!allDfsDone && bfsDone){
             bool pathFound = false;
             long pathIndex = 0;
             for (long i = s; i < n; i += p){
@@ -972,13 +989,175 @@ void bsphk(){
             v[i] = vl[i];
         }
 
+        double postProcessingStart = bsp_time();
+
+        if (postProcessing && roundCounter % r == 0){
+            // This is where the fun begins. Unrestricted BFS
+            bool searchFinished = false;
+
+            bool newVerticesDiscovered = false;
+
+            long initialIndex = s;
+            long finalIndex = initialIndex;
+
+            while (!searchFinished){
+                long layer = 0;
+                newVerticesDiscovered = false;
+
+                for (long i = 0; i < m; i++){
+                    currentVerticesU[i] = false;
+                    visitedVerticesU[i] = disallowedVerticesU[i];
+                }
+
+                for (long i = 0; i < n; i++){
+                    currentVerticesV[i] = false;
+                    visitedVerticesV[i] = disallowedVerticesV[i];
+                }
+
+                for (long i = initialIndex; i < m; i += p){
+                    finalIndex = i + p;
+                    if (layerUHasEdges[i] && ul[i] == -1 && !visitedVerticesU[i]){
+                        visitedVerticesU[i] = true;
+
+                        for (long j = 0; j < n; j++){
+                            if (!visitedVerticesV[j] && edges[i * n + j] == 1){
+                                newVerticesDiscovered = true;
+                                currentVerticesV[j] = true;
+
+                                if (vl[j] == -1){
+                                    bfsDone = true;
+                                }
+                            }
+                        }
+                        if (newVerticesDiscovered){
+                            break;
+                        }
+                    }
+                }
+
+                initialIndex = finalIndex;
+
+                bool internalBfsDone = false;
+
+                while (!internalBfsDone && newVerticesDiscovered){
+                    newVerticesDiscovered = false;
+                    if (layer % 2 == 0){
+                        for (long i = 0; i < n; i++){
+                            if (currentVerticesV[i]){
+                                for (long j = 0; j < m; j++){
+                                    if (!visitedVerticesU[j] && edges[j * n + i] == 1){
+                                        newVerticesDiscovered = true;
+                                        currentVerticesU[j] = true;
+                                        visitedVerticesU[i] = true;
+                                    }
+                                }
+                            }
+                            currentVerticesV[i] = false;
+                        }
+                    }
+                    else{
+                        for (long i = 0; i < m; i++){
+                            if (currentVerticesU[i]){
+                                for (long j = 0; j < n; j++){
+                                    if (!visitedVerticesV[j] && edges[i * n + j] == 1){
+                                        newVerticesDiscovered = true;
+                                        currentVerticesV[j] = true;
+                                        visitedVerticesV[j] = true;
+
+                                        if (vl[j] == -1){
+                                            internalBfsDone = true;
+                                        }
+                                    }
+                                }
+                            }
+                            currentVerticesU[i] = false;
+                        }
+                    }
+
+                    layer++;
+                }
+
+                if (internalBfsDone){
+                    for (long i = 0; i < m; i++){
+                        visitedVerticesU[i] = false;
+                    }
+
+                    for (long i = 0; i < n; i++){
+                        visitedVerticesV[i] = false;
+                    }
+                }
+
+                for (long i = 0; i < p; i++){
+                    bsp_put(i, visitedVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
+                    bsp_put(i, visitedVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
+                    bsp_put(i, &internalBfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+                }
+
+                bsp_sync();
+
+                searchFinished = true;
+
+                for (long i = 0; i < p; i++){
+                    if (bfsDones[i]){
+                        searchFinished = false;
+                    }
+                }
+
+                for (long i = 0; i < m; i++){
+                    bool vertexDisallowed = false;
+                    for (long j = 0; j < p; j++){
+                        if (visitedVerticesU[j * m + i]){
+                            vertexDisallowed = true;
+                        }
+                    }
+                    disallowedVerticesU[i] = vertexDisallowed;
+                }
+
+                for (long i = 0; i < n; i++){
+                    bool vertexDisallowed = false;
+                    for (long j = 0; j < p; j++){
+                        if (visitedVerticesV[j * n + i]){
+                            vertexDisallowed = true;
+                        }
+                    }
+                    disallowedVerticesV[i] = vertexDisallowed;
+                }
+            }
+            
+            bool anyVerticesAllowed = false;
+
+            for (long i = 0; i < m; i++){
+                if (!disallowedVerticesU[i]){
+                    anyVerticesAllowed = true;
+                    break;
+                }
+            }
+
+            if (!anyVerticesAllowed){
+                for (long i = 0; i < n; i++){
+                    if (!disallowedVerticesV[i]){
+                        anyVerticesAllowed = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!anyVerticesAllowed){
+                done = true;
+            }
+        }
+
         double endTime = bsp_time();
+
+        if (postProcessing){
+            totalPostProcessingTime += (endTime - postProcessingStart);
+        }
 
         if (s == 0){
             printf("In round %ld, %ld augmenting paths were found, resulting in %ld new matchings\n", roundCounter, augmentingPaths, newMatchingCount - oldMatchingCount);
         }
 
-        if (newMatchingCount == oldMatchingCount || newMatchingCount == maxMatchingCount){
+        if (newMatchingCount == oldMatchingCount || newMatchingCount == maxMatchingCount || done){
             done = true;
 
             if (s == 0){
@@ -1011,16 +1190,28 @@ void bsphk(){
                     // }
 
                     printf("MATCHING\n");
+                    if (preProcessing){
+                        printf("In preprocessing a matching of size %ld was found\n", preMatchingCount);
+                    }
 
                     printf("Found a maximum matching of size %ld\n", newMatchingCount);
 
                     printf("Final timing\n");
-                    if (preProcessing){
+                    if (f == 0){
+                        printf("In total the algorith took %.6lf seconds\n", endTime - outerLoopStartTime);
+                    }
+                    if (f == 1){
                         printf("In total the preprocessing step took %.6lf seconds\n", outerLoopStartTime - preProcessingStart);
                         printf("In total the algorith took %.6lf seconds\n", endTime - preProcessingStart);
                     }
-                    else{
+                    if (f == 2){
+                        printf("In total postprocessing took %.6lf seconds\n", totalPostProcessingTime);
                         printf("In total the algorith took %.6lf seconds\n", endTime - outerLoopStartTime);
+                    }
+                    if (f == 3){
+                        printf("In total the preprocessing step took %.6lf seconds\n", outerLoopStartTime - preProcessingStart);
+                        printf("In total postprocessing took %.6lf seconds\n", totalPostProcessingTime);
+                        printf("In total the algorith took %.6lf seconds\n", endTime - preProcessingStart);
                     }
 
                     // printf("NEW MATCHING\n");
@@ -1104,6 +1295,14 @@ int main(int argc, char **argv){
     fflush(stdout);
 
     scanf("%ld",&F);
+
+    if (F > 1){
+        /* Sequential part for F*/
+        printf("Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.\n");
+        fflush(stdout);
+
+        scanf("%ld",&R);
+    }
 
     /* Sequential part for M*/
     printf("How many vertices on the left side of the bipartite graph?\n");
