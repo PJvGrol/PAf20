@@ -530,9 +530,11 @@ void bsphk(){
         for (long i = 0; i < p; i++){
             for (long j = i; j < m; j += p){
                 u[j] = us[i * m + j];
+                ul[j] = us[i * m + j];
             }
             for (long j = i; j < n; j += p){
                 v[j] = vs[i * n + j];
+                vl[j] = vs[i * n + j];
             }
         }
 
@@ -544,16 +546,15 @@ void bsphk(){
 
         bsp_sync();
 
-        if (s == 0){
-            long tempMatchingCount = 0;
-            for (long i = 0; i < m; i++){
-                if (u[i] > -1){
-                    tempMatchingCount++;
-                }
+        long tempMatchingCount = 0;
+        for (long i = 0; i < m; i++){
+            if (u[i] > -1){
+                tempMatchingCount++;
             }
-            preMatchingCount = tempMatchingCount;
-            oldMatchingCount = tempMatchingCount;
         }
+        preMatchingCount = tempMatchingCount;
+        oldMatchingCount = tempMatchingCount;
+        newMatchingCount = tempMatchingCount;
     }
 
     double outerLoopStartTime = bsp_time();
@@ -561,213 +562,111 @@ void bsphk(){
     while (!done){
         double startTime = bsp_time();
 
+        if (oldMatchingCount == maxMatchingCount){
+            done = true;
+        }
+
         bool bfsDone = false;
 
         long layer = 0;
         long index = 0;
 
-        for (long i = 0; i < m; i++){
-            ul[i] = u[i];
-            currentVerticesU[i] = false;
-            visitedVerticesU[i] = disallowedVerticesU[i];
-        }
-
-        for (long i = 0; i < n; i++){
-            vl[i] = v[i];
-            currentVerticesV[i] = false;
-            visitedVerticesV[i] = disallowedVerticesV[i];
-            finalVerticesV[i] = false;
-        }
-
-        // Layer 0 and 1 of BFS, cyclic distr.
-
-        for (long i = s; i < m; i += p){
-            if (layerUHasEdges[i] && ul[i] == -1 && !visitedVerticesU[i]){
-                currentVerticesU[i] = true;
-
-                for (long j = 0; j < n; j++){
-                    if (edges[i * n + j] == 1 && !visitedVerticesV[j]){
-                        currentVerticesV[j] = true;
-
-                        if (vl[j] == -1){
-                            bfsDone = true;
-                        }
-                    }
-                }
-            }
-        }
-
-        for (long i = 0; i < p; i++){
-            bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
-            bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
-            bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
-        }
-
-        bsp_sync();
-        bfsSuperSteps++;
-
-        bfsDone = false;
-
-        for (long i = 0; i < p; i++){
-            if (bfsDones[i]){
-                bfsDone = true;
-            }
-        }
-
-        bfsLayers[layer] = index;
-
-        for (long i = 0; i < m; i++){
-            bool vertexVisited = false;
-
-            for (long j = 0; j < p; j++){
-                if (currentVerticesUs[j * m + i]){
-                    vertexVisited = true;
-                }
+        if (!done){
+            for (long i = 0; i < m; i++){
+                ul[i] = u[i];
+                currentVerticesU[i] = false;
+                visitedVerticesU[i] = disallowedVerticesU[i];
             }
 
-            if (vertexVisited){
-                currentVerticesU[i] = true;
-                bfsResult[index] = i;
-                index++;
-            }
-        }
-
-        layer++;
-        bfsLayers[layer] = index;
-
-        for (long i = 0; i < m; i++){
-            currentVerticesU[i] = false;
-        }
-
-        for (long i = 0; i < n; i++){
-            bool vertexVisited = false;
-
-            for (long j = 0; j < p; j++){
-                if (currentVerticesVs[j * n + i]){
-                    vertexVisited = true;
-                }
+            for (long i = 0; i < n; i++){
+                vl[i] = v[i];
+                currentVerticesV[i] = false;
+                visitedVerticesV[i] = disallowedVerticesV[i];
+                finalVerticesV[i] = false;
             }
 
-            if (vertexVisited){
-                visitedVerticesV[i] = true;
+            // Layer 0 and 1 of BFS, cyclic distr.
 
-                if (bfsDone && vl[i] == -1){
-                    finalVerticesV[i] = true;
-                    currentVerticesV[i] = true;
-                    bfsResult[index] = i;
-                    index++;
-                }
-                else if (!bfsDone){
-                    currentVerticesV[i] = true;
-                    bfsResult[index] = i;
-                    index++;
-                }
-            }
-        }
+            for (long i = s; i < m; i += p){
+                if (layerUHasEdges[i] && ul[i] == -1 && !visitedVerticesU[i]){
+                    currentVerticesU[i] = true;
 
-        layer++;
-        bfsLayers[layer] = index;
+                    for (long j = 0; j < n; j++){
+                        if (edges[i * n + j] == 1 && !visitedVerticesV[j]){
+                            currentVerticesV[j] = true;
 
-        // Value of layer is now 2
-        
-        bool bfsCanContinue = true;
-
-        double initialBfsTime = bsp_time();
-
-        while (!bfsDone && bfsCanContinue){
-            // layer % 2 == 0 means we're in V and need to get to U over a matched edge
-            if (layer % 2 == 0){
-                for (long i = s; i < n; i += p){
-                    if (currentVerticesV[i] && !visitedVerticesU[vl[i]]){
-                        currentVerticesU[vl[i]] = true;
-                    }
-                }
-
-                for (long i = 0; i < p; i++){
-                    bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
-                }
-
-                bsp_sync();
-                bfsSuperSteps++;
-
-                for (long i = 0; i < n; i++){
-                    currentVerticesV[i] = false;
-                }
-
-                for (long i = 0; i < m; i++){
-                    bool vertexVisited = false;
-
-                    for (long j = 0; j < p; j++){
-                        if (currentVerticesUs[j * m + i]){
-                            vertexVisited = true;
-                        }
-                    }
-
-                    if (vertexVisited){
-                        currentVerticesU[i] = true;
-                        bfsResult[index] = i;
-                        index++;
-                    }
-                }
-            }
-            else{
-                for (long i = s; i < m; i += p){
-                    if (currentVerticesU[i]){
-                        for (long j = 0; j < n; j++){
-                            if (!visitedVerticesV[j] && edges[i * n + j] == 1 && ul[i] != j){
-                                currentVerticesV[j] = true;
-
-                                if (vl[j] == -1){
-                                    bfsDone = true;
-                                }
+                            if (vl[j] == -1){
+                                bfsDone = true;
                             }
                         }
                     }
                 }
+            }
 
-                for (long i = 0; i < p; i++){
-                    bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
-                    bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+            for (long i = 0; i < p; i++){
+                bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
+                bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
+                bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+            }
+
+            bsp_sync();
+            bfsSuperSteps++;
+
+            bfsDone = false;
+
+            for (long i = 0; i < p; i++){
+                if (bfsDones[i]){
+                    bfsDone = true;
                 }
+            }
 
-                bsp_sync();
-                bfsSuperSteps++;
+            bfsLayers[layer] = index;
 
-                bfsDone = false;
+            for (long i = 0; i < m; i++){
+                bool vertexVisited = false;
 
-                for (long i = 0; i < p; i++){
-                    if (bfsDones[i]){
-                        bfsDone = true;
+                for (long j = 0; j < p; j++){
+                    if (currentVerticesUs[j * m + i]){
+                        vertexVisited = true;
                     }
                 }
 
-                for (long i = 0; i < m; i++){
-                    currentVerticesU[i] = false;
+                if (vertexVisited){
+                    currentVerticesU[i] = true;
+                    bfsResult[index] = i;
+                    index++;
+                }
+            }
+
+            layer++;
+            bfsLayers[layer] = index;
+
+            for (long i = 0; i < m; i++){
+                currentVerticesU[i] = false;
+            }
+
+            for (long i = 0; i < n; i++){
+                bool vertexVisited = false;
+
+                for (long j = 0; j < p; j++){
+                    if (currentVerticesVs[j * n + i]){
+                        vertexVisited = true;
+                    }
                 }
 
-                for (long i = 0; i < n; i++){
-                    bool vertexVisited = false;
+                if (vertexVisited){
+                    visitedVerticesV[i] = true;
 
-                    for (long j = 0; j < p; j++){
-                        if (currentVerticesVs[j * n + i]){
-                            vertexVisited = true;
-                        }
+                    if (bfsDone && vl[i] == -1){
+                        finalVerticesV[i] = true;
+                        currentVerticesV[i] = true;
+                        bfsResult[index] = i;
+                        index++;
                     }
-
-                    if (vertexVisited){
-                        visitedVerticesV[i] = true;
-
-                        if (bfsDone && vl[i] == -1){
-                            finalVerticesV[i] = true;
-                            currentVerticesV[i] = true;
-                            bfsResult[index] = i;
-                            index++;
-                        }
-                        else if (!bfsDone){
-                            currentVerticesV[i] = true;
-                            bfsResult[index] = i;
-                            index++;
-                        }
+                    else if (!bfsDone){
+                        currentVerticesV[i] = true;
+                        bfsResult[index] = i;
+                        index++;
                     }
                 }
             }
@@ -775,202 +674,312 @@ void bsphk(){
             layer++;
             bfsLayers[layer] = index;
 
-            bfsCanContinue = false;
+            // Value of layer is now 2
+            
+            bool bfsCanContinue = true;
 
-            for (long i = 0; i < m; i++){
-                if (currentVerticesU[i]){
-                    bfsCanContinue = true;
-                    break;
+            double initialBfsTime = bsp_time();
+
+            while (!bfsDone && bfsCanContinue){
+                // layer % 2 == 0 means we're in V and need to get to U over a matched edge
+                if (layer % 2 == 0){
+                    for (long i = s; i < n; i += p){
+                        if (currentVerticesV[i] && !visitedVerticesU[vl[i]]){
+                            currentVerticesU[vl[i]] = true;
+                        }
+                    }
+
+                    for (long i = 0; i < p; i++){
+                        bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
+                    }
+
+                    bsp_sync();
+                    bfsSuperSteps++;
+
+                    for (long i = 0; i < n; i++){
+                        currentVerticesV[i] = false;
+                    }
+
+                    for (long i = 0; i < m; i++){
+                        bool vertexVisited = false;
+
+                        for (long j = 0; j < p; j++){
+                            if (currentVerticesUs[j * m + i]){
+                                vertexVisited = true;
+                            }
+                        }
+
+                        if (vertexVisited){
+                            currentVerticesU[i] = true;
+                            bfsResult[index] = i;
+                            index++;
+                        }
+                    }
                 }
-            }
+                else{
+                    for (long i = s; i < m; i += p){
+                        if (currentVerticesU[i]){
+                            for (long j = 0; j < n; j++){
+                                if (!visitedVerticesV[j] && edges[i * n + j] == 1 && ul[i] != j){
+                                    currentVerticesV[j] = true;
 
-            for (long i = 0; i < n; i++){
-                if (currentVerticesV[i]){
-                    bfsCanContinue = true;
-                    break;
+                                    if (vl[j] == -1){
+                                        bfsDone = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    for (long i = 0; i < p; i++){
+                        bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
+                        bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+                    }
+
+                    bsp_sync();
+                    bfsSuperSteps++;
+
+                    bfsDone = false;
+
+                    for (long i = 0; i < p; i++){
+                        if (bfsDones[i]){
+                            bfsDone = true;
+                        }
+                    }
+
+                    for (long i = 0; i < m; i++){
+                        currentVerticesU[i] = false;
+                    }
+
+                    for (long i = 0; i < n; i++){
+                        bool vertexVisited = false;
+
+                        for (long j = 0; j < p; j++){
+                            if (currentVerticesVs[j * n + i]){
+                                vertexVisited = true;
+                            }
+                        }
+
+                        if (vertexVisited){
+                            visitedVerticesV[i] = true;
+
+                            if (bfsDone && vl[i] == -1){
+                                finalVerticesV[i] = true;
+                                currentVerticesV[i] = true;
+                                bfsResult[index] = i;
+                                index++;
+                            }
+                            else if (!bfsDone){
+                                currentVerticesV[i] = true;
+                                bfsResult[index] = i;
+                                index++;
+                            }
+                        }
+                    }
+                }
+
+                layer++;
+                bfsLayers[layer] = index;
+
+                bfsCanContinue = false;
+
+                for (long i = 0; i < m; i++){
+                    if (currentVerticesU[i]){
+                        bfsCanContinue = true;
+                        break;
+                    }
+                }
+
+                for (long i = 0; i < n; i++){
+                    if (currentVerticesV[i]){
+                        bfsCanContinue = true;
+                        break;
+                    }
                 }
             }
         }
 
         double finalBfsTime = bsp_time();
 
-        bool allDfsDone = false;
-
         long augmentingPaths = 0;
-        long augmentingPathsAccepted = 0;
-        long augmentingPathsRejected = 0;
-        long dfsRoundCounter = 0;
 
-        while (!allDfsDone && bfsDone){
-            bool pathFound = false;
-            long pathIndex = 0;
-            for (long i = s; i < n; i += p){
-                if (!pathFound && finalVerticesV[i]){
-                    long uIndex = 0;
-                    long vIndex = i;
+        if (!done){
+            bool allDfsDone = false;
+            long augmentingPathsAccepted = 0;
+            long augmentingPathsRejected = 0;
+            long dfsRoundCounter = 0;
 
-                    path[0] = vIndex;
-                    pathIndex = 1;
-                    
-                    for (long j = layer - 2; j > -1; j--){
-                        long startIndex = bfsLayers[j];
-                        long endIndex = bfsLayers[j + 1];
+            while (!allDfsDone && bfsDone){
+                bool pathFound = false;
+                long pathIndex = 0;
+                for (long i = s; i < n; i += p){
+                    if (!pathFound && finalVerticesV[i]){
+                        long uIndex = 0;
+                        long vIndex = i;
 
-                        for (long k = startIndex; k < endIndex; k++){
-                            if (j % 2 == 0){
-                                uIndex = bfsResult[k];
-                                vIndex = path[pathIndex - 1];
+                        path[0] = vIndex;
+                        pathIndex = 1;
+                        
+                        for (long j = layer - 2; j > -1; j--){
+                            long startIndex = bfsLayers[j];
+                            long endIndex = bfsLayers[j + 1];
 
-                                if (ul[uIndex] == u[uIndex] && edges[uIndex * n + vIndex] == 1){
-                                    path[pathIndex] = uIndex;
-                                    pathIndex++;
+                            for (long k = startIndex; k < endIndex; k++){
+                                if (j % 2 == 0){
+                                    uIndex = bfsResult[k];
+                                    vIndex = path[pathIndex - 1];
 
-                                    if (ul[uIndex] == -1){
-                                        pathFound = true;
+                                    if (ul[uIndex] == u[uIndex] && edges[uIndex * n + vIndex] == 1){
+                                        path[pathIndex] = uIndex;
+                                        pathIndex++;
+
+                                        if (ul[uIndex] == -1){
+                                            pathFound = true;
+                                        }
+
+                                        break;
                                     }
+                                }
+                                else{
+                                    uIndex = path[pathIndex - 1];
+                                    vIndex = bfsResult[k];
 
-                                    break;
+                                    if (vl[vIndex] == v[vIndex] && vl[vIndex] == uIndex){
+                                        path[pathIndex] = vIndex;
+                                        pathIndex++;
+
+                                        break;
+                                    }
                                 }
                             }
-                            else{
-                                uIndex = path[pathIndex - 1];
-                                vIndex = bfsResult[k];
 
-                                if (vl[vIndex] == v[vIndex] && vl[vIndex] == uIndex){
-                                    path[pathIndex] = vIndex;
-                                    pathIndex++;
-
-                                    break;
-                                }
+                            if (pathFound){
+                                break;
                             }
                         }
 
                         if (pathFound){
                             break;
                         }
-                    }
-
-                    if (pathFound){
-                        break;
-                    }
-                    else{
-                        finalVerticesV[i] = false;
+                        else{
+                            finalVerticesV[i] = false;
+                        }
                     }
                 }
-            }
 
-            for (long i = 0; i < p; i++){
-                bsp_put(i, path, paths, s * (m + n) * sizeof(long), (m + n) * sizeof(long));
-                bsp_put(i, &pathIndex, pathIndices, s * sizeof(long), sizeof(long));
-                bsp_put(i, &pathFound, pathsFound, s * sizeof(bool), sizeof(bool));
-            }
-
-            bsp_sync();
-            dfsSuperSteps++;
-
-            allDfsDone = true;
-
-            if (dfsRoundCounter % 2 == 0){
                 for (long i = 0; i < p; i++){
-                    if (pathsFound[i]){
-                        augmentingPaths++;
-                        totalPaths++;
-                        allDfsDone = false;
-                        nrPathsFound[i]++;
+                    bsp_put(i, path, paths, s * (m + n) * sizeof(long), (m + n) * sizeof(long));
+                    bsp_put(i, &pathIndex, pathIndices, s * sizeof(long), sizeof(long));
+                    bsp_put(i, &pathFound, pathsFound, s * sizeof(bool), sizeof(bool));
+                }
 
-                        long pathStartIndex = i * (m + n);
-                        bool pathAccepted = true;
-                        
-                        for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
-                            if (j % 2 == 0){
-                                if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
-                                    pathAccepted = false;
+                bsp_sync();
+                dfsSuperSteps++;
+
+                allDfsDone = true;
+
+                if (dfsRoundCounter % 2 == 0){
+                    for (long i = 0; i < p; i++){
+                        if (pathsFound[i]){
+                            augmentingPaths++;
+                            totalPaths++;
+                            allDfsDone = false;
+                            nrPathsFound[i]++;
+
+                            long pathStartIndex = i * (m + n);
+                            bool pathAccepted = true;
+                            
+                            for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
+                                if (j % 2 == 0){
+                                    if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
+                                        pathAccepted = false;
+                                    }
+                                }
+                                else{
+                                    if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
+                                        pathAccepted = false;
+                                    }
+                                }
+                            }
+
+                            if (pathAccepted){
+                                acceptedPaths++;
+                                augmentingPathsAccepted++;
+                                finalVerticesV[paths[pathStartIndex]] = false;
+
+                                for (long j = 0; j < pathIndices[i]; j++){
+                                    if (j % 2 == 0){
+                                        vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
+                                    }
+                                    else{
+                                        ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
+                                    }
                                 }
                             }
                             else{
-                                if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
-                                    pathAccepted = false;
-                                }
+                                rejectedPaths++;
+                                augmentingPathsRejected++;
                             }
-                        }
-
-                        if (pathAccepted){
-                            acceptedPaths++;
-                            augmentingPathsAccepted++;
-                            finalVerticesV[paths[pathStartIndex]] = false;
-
-                            for (long j = 0; j < pathIndices[i]; j++){
-                                if (j % 2 == 0){
-                                    vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
-                                }
-                                else{
-                                    ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
-                                }
-                            }
-                        }
-                        else{
-                            rejectedPaths++;
-                            augmentingPathsRejected++;
                         }
                     }
                 }
-            }
-            else{
-                for (long i = p - 1; i > -1; i--){
-                    if (pathsFound[i]){
-                        augmentingPaths++;
-                        totalPaths++;
-                        allDfsDone = false;
-                        nrPathsFound[i]++;
+                else{
+                    for (long i = p - 1; i > -1; i--){
+                        if (pathsFound[i]){
+                            augmentingPaths++;
+                            totalPaths++;
+                            allDfsDone = false;
+                            nrPathsFound[i]++;
 
-                        long pathStartIndex = i * (m + n);
-                        bool pathAccepted = true;
-                        
-                        for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
-                            if (j % 2 == 0){
-                                if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
-                                    pathAccepted = false;
+                            long pathStartIndex = i * (m + n);
+                            bool pathAccepted = true;
+                            
+                            for (long j = 0; j < pathIndices[i] && pathAccepted; j++){
+                                if (j % 2 == 0){
+                                    if (vl[paths[pathStartIndex + j]] != v[paths[pathStartIndex + j]]){
+                                        pathAccepted = false;
+                                    }
+                                }
+                                else{
+                                    if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
+                                        pathAccepted = false;
+                                    }
+                                }
+                            }
+
+                            if (pathAccepted){
+                                acceptedPaths++;
+                                augmentingPathsAccepted++;
+                                finalVerticesV[paths[pathStartIndex]] = false;
+
+                                for (long j = 0; j < pathIndices[i]; j++){
+                                    if (j % 2 == 0){
+                                        vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
+                                    }
+                                    else{
+                                        ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
+                                    }
                                 }
                             }
                             else{
-                                if (ul[paths[pathStartIndex + j]] != u[paths[pathStartIndex + j]]){
-                                    pathAccepted = false;
-                                }
+                                rejectedPaths++;
+                                augmentingPathsRejected++;
                             }
-                        }
-
-                        if (pathAccepted){
-                            acceptedPaths++;
-                            augmentingPathsAccepted++;
-                            finalVerticesV[paths[pathStartIndex]] = false;
-
-                            for (long j = 0; j < pathIndices[i]; j++){
-                                if (j % 2 == 0){
-                                    vl[paths[pathStartIndex + j]] = paths[pathStartIndex + j + 1];
-                                }
-                                else{
-                                    ul[paths[pathStartIndex + j]] = paths[pathStartIndex + j - 1];
-                                }
-                            }
-                        }
-                        else{
-                            rejectedPaths++;
-                            augmentingPathsRejected++;
                         }
                     }
-                }
-            }   
+                }   
 
-            for (long i = 0 ; i < pathIndex + 1; i++){
-                path[i] = -1;
+                for (long i = 0 ; i < pathIndex + 1; i++){
+                    path[i] = -1;
+                }
+
+                dfsRoundCounter++;
             }
 
-            dfsRoundCounter++;
-        }
-
-        if (s == 0){
-            printf("In round %ld a total of %ld augmenting paths were found of length %ld\n", roundCounter, augmentingPaths, layer);
-            printf("Of these paths %ld were accepted and therefore %ld rejected\n", augmentingPathsAccepted, augmentingPathsRejected);
+            if (s == 0){
+                printf("In round %ld a total of %ld augmenting paths were found of length %ld\n", roundCounter, augmentingPaths, layer);
+                printf("Of these paths %ld were accepted and therefore %ld rejected\n", augmentingPathsAccepted, augmentingPathsRejected);
+            }
         }
 
         double finalDfsTime = bsp_time();
@@ -991,7 +1000,7 @@ void bsphk(){
 
         double postProcessingStart = bsp_time();
 
-        if (postProcessing && roundCounter % r == 0){
+        if (postProcessing && roundCounter % r == 0 && !done){
             // This is where the fun begins. Unrestricted BFS
             bool searchFinished = false;
 
