@@ -1,0 +1,891 @@
+4 nodes, 16 tasks per node
+max 10:00 minutes
+
+----------
+|U| = 5000, |V| = 1000, 10 edges/vertex, 1 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 56 augmenting paths were found of length 4
+Of these paths 56 were accepted and therefore 0 rejected
+In round 1, 56 augmenting paths were found, resulting in 56 new matchings
+In round 2 a total of 60 augmenting paths were found of length 6
+Of these paths 60 were accepted and therefore 0 rejected
+In round 2, 60 augmenting paths were found, resulting in 60 new matchings
+In round 3 a total of 9 augmenting paths were found of length 8
+Of these paths 9 were accepted and therefore 0 rejected
+In round 3, 9 augmenting paths were found, resulting in 9 new matchings
+In round 4 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 4, 2 augmenting paths were found, resulting in 2 new matchings
+DONE!
+A total of 4 rounds of HK were required for the solution
+A total of 24 BFS communication related supersteps occurred
+A total of 131 DFS communication related supersteps occurred
+In total 5000 augmenting paths were found, 5000 accepted and 0 rejected
+Proc 0 found a total of 5000 augmenting paths
+MATRIX
+49671 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4873 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.095859 seconds
+In total the algorith took 0.254158 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 1 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 52 augmenting paths were found of length 4
+Of these paths 52 were accepted and therefore 0 rejected
+In round 1, 52 augmenting paths were found, resulting in 52 new matchings
+In round 2 a total of 56 augmenting paths were found of length 6
+Of these paths 56 were accepted and therefore 0 rejected
+In round 2, 56 augmenting paths were found, resulting in 56 new matchings
+In round 3 a total of 4 augmenting paths were found of length 8
+Of these paths 4 were accepted and therefore 0 rejected
+In round 3, 4 augmenting paths were found, resulting in 4 new matchings
+In round 4 a total of 4 augmenting paths were found of length 10
+Of these paths 4 were accepted and therefore 0 rejected
+In round 4, 4 augmenting paths were found, resulting in 4 new matchings
+DONE!
+A total of 4 rounds of HK were required for the solution
+A total of 24 BFS communication related supersteps occurred
+A total of 120 DFS communication related supersteps occurred
+In total 5000 augmenting paths were found, 5000 accepted and 0 rejected
+Proc 0 found a total of 5000 augmenting paths
+MATRIX
+50177 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4884 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.094084 seconds
+In total the algorith took 0.237204 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 1 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 56 augmenting paths were found of length 4
+Of these paths 56 were accepted and therefore 0 rejected
+In round 1, 56 augmenting paths were found, resulting in 56 new matchings
+In round 2 a total of 57 augmenting paths were found of length 6
+Of these paths 57 were accepted and therefore 0 rejected
+In round 2, 57 augmenting paths were found, resulting in 57 new matchings
+In round 3 a total of 9 augmenting paths were found of length 8
+Of these paths 9 were accepted and therefore 0 rejected
+In round 3, 9 augmenting paths were found, resulting in 9 new matchings
+In round 4 a total of 1 augmenting paths were found of length 10
+Of these paths 1 were accepted and therefore 0 rejected
+In round 4, 1 augmenting paths were found, resulting in 1 new matchings
+In round 5 a total of 1 augmenting paths were found of length 14
+Of these paths 1 were accepted and therefore 0 rejected
+In round 5, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 37 BFS communication related supersteps occurred
+A total of 129 DFS communication related supersteps occurred
+In total 5000 augmenting paths were found, 5000 accepted and 0 rejected
+Proc 0 found a total of 5000 augmenting paths
+MATRIX
+49953 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4876 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.096471 seconds
+In total the algorith took 0.323779 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 1 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 69 augmenting paths were found of length 4
+Of these paths 69 were accepted and therefore 0 rejected
+In round 1, 69 augmenting paths were found, resulting in 69 new matchings
+In round 2 a total of 54 augmenting paths were found of length 6
+Of these paths 54 were accepted and therefore 0 rejected
+In round 2, 54 augmenting paths were found, resulting in 54 new matchings
+In round 3 a total of 8 augmenting paths were found of length 8
+Of these paths 8 were accepted and therefore 0 rejected
+In round 3, 8 augmenting paths were found, resulting in 8 new matchings
+In round 4 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 4, 2 augmenting paths were found, resulting in 2 new matchings
+DONE!
+A total of 4 rounds of HK were required for the solution
+A total of 24 BFS communication related supersteps occurred
+A total of 137 DFS communication related supersteps occurred
+In total 4999 augmenting paths were found, 4999 accepted and 0 rejected
+Proc 0 found a total of 4999 augmenting paths
+MATRIX
+50158 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4866 was found
+Found a maximum matching of size 4999
+Final timing
+In total the preprocessing step took 0.096096 seconds
+In total the algorith took 0.263327 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 1 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 67 augmenting paths were found of length 4
+Of these paths 67 were accepted and therefore 0 rejected
+In round 1, 67 augmenting paths were found, resulting in 67 new matchings
+In round 2 a total of 51 augmenting paths were found of length 6
+Of these paths 51 were accepted and therefore 0 rejected
+In round 2, 51 augmenting paths were found, resulting in 51 new matchings
+In round 3 a total of 6 augmenting paths were found of length 8
+Of these paths 6 were accepted and therefore 0 rejected
+In round 3, 6 augmenting paths were found, resulting in 6 new matchings
+In round 4 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 4, 2 augmenting paths were found, resulting in 2 new matchings
+DONE!
+A total of 4 rounds of HK were required for the solution
+A total of 24 BFS communication related supersteps occurred
+A total of 130 DFS communication related supersteps occurred
+In total 5000 augmenting paths were found, 5000 accepted and 0 rejected
+Proc 0 found a total of 5000 augmenting paths
+MATRIX
+49730 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4874 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.095949 seconds
+In total the algorith took 0.266615 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 2 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 153 augmenting paths were found of length 2
+Of these paths 153 were accepted and therefore 0 rejected
+In round 1, 153 augmenting paths were found, resulting in 153 new matchings
+In round 2 a total of 242 augmenting paths were found of length 4
+Of these paths 241 were accepted and therefore 1 rejected
+In round 2, 242 augmenting paths were found, resulting in 241 new matchings
+In round 3 a total of 60 augmenting paths were found of length 6
+Of these paths 58 were accepted and therefore 2 rejected
+In round 3, 60 augmenting paths were found, resulting in 58 new matchings
+In round 4 a total of 6 augmenting paths were found of length 8
+Of these paths 6 were accepted and therefore 0 rejected
+In round 4, 6 augmenting paths were found, resulting in 6 new matchings
+In round 5 a total of 2 augmenting paths were found of length 10
+Of these paths 1 were accepted and therefore 1 rejected
+In round 5, 2 augmenting paths were found, resulting in 1 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 254 DFS communication related supersteps occurred
+In total 2732 augmenting paths were found, 2728 accepted and 4 rejected
+Proc 0 found a total of 2501 augmenting paths
+Proc 1 found a total of 2503 augmenting paths
+MATRIX
+50192 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4540 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.037712 seconds
+In total the algorith took 0.187137 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 2 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 125 augmenting paths were found of length 2
+Of these paths 125 were accepted and therefore 0 rejected
+In round 1, 125 augmenting paths were found, resulting in 125 new matchings
+In round 2 a total of 231 augmenting paths were found of length 4
+Of these paths 231 were accepted and therefore 0 rejected
+In round 2, 231 augmenting paths were found, resulting in 231 new matchings
+In round 3 a total of 55 augmenting paths were found of length 6
+Of these paths 55 were accepted and therefore 0 rejected
+In round 3, 55 augmenting paths were found, resulting in 55 new matchings
+In round 4 a total of 6 augmenting paths were found of length 8
+Of these paths 6 were accepted and therefore 0 rejected
+In round 4, 6 augmenting paths were found, resulting in 6 new matchings
+In round 5 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 5, 2 augmenting paths were found, resulting in 2 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 231 DFS communication related supersteps occurred
+In total 2721 augmenting paths were found, 2721 accepted and 0 rejected
+Proc 0 found a total of 2500 augmenting paths
+Proc 1 found a total of 2500 augmenting paths
+MATRIX
+49978 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4580 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.036108 seconds
+In total the algorith took 0.181412 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 2 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 141 augmenting paths were found of length 2
+Of these paths 141 were accepted and therefore 0 rejected
+In round 1, 141 augmenting paths were found, resulting in 141 new matchings
+In round 2 a total of 239 augmenting paths were found of length 4
+Of these paths 237 were accepted and therefore 2 rejected
+In round 2, 239 augmenting paths were found, resulting in 237 new matchings
+In round 3 a total of 59 augmenting paths were found of length 6
+Of these paths 57 were accepted and therefore 2 rejected
+In round 3, 59 augmenting paths were found, resulting in 57 new matchings
+In round 4 a total of 9 augmenting paths were found of length 8
+Of these paths 9 were accepted and therefore 0 rejected
+In round 4, 9 augmenting paths were found, resulting in 9 new matchings
+In round 5 a total of 3 augmenting paths were found of length 10
+Of these paths 3 were accepted and therefore 0 rejected
+In round 5, 3 augmenting paths were found, resulting in 3 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 25 BFS communication related supersteps occurred
+A total of 243 DFS communication related supersteps occurred
+In total 2722 augmenting paths were found, 2718 accepted and 4 rejected
+Proc 0 found a total of 2502 augmenting paths
+Proc 1 found a total of 2502 augmenting paths
+MATRIX
+50198 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4553 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.036508 seconds
+In total the algorith took 0.161338 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 2 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 139 augmenting paths were found of length 2
+Of these paths 139 were accepted and therefore 0 rejected
+In round 1, 139 augmenting paths were found, resulting in 139 new matchings
+In round 2 a total of 237 augmenting paths were found of length 4
+Of these paths 236 were accepted and therefore 1 rejected
+In round 2, 237 augmenting paths were found, resulting in 236 new matchings
+In round 3 a total of 53 augmenting paths were found of length 6
+Of these paths 52 were accepted and therefore 1 rejected
+In round 3, 53 augmenting paths were found, resulting in 52 new matchings
+In round 4 a total of 14 augmenting paths were found of length 8
+Of these paths 12 were accepted and therefore 2 rejected
+In round 4, 14 augmenting paths were found, resulting in 12 new matchings
+In round 5 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 5, 2 augmenting paths were found, resulting in 2 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 241 DFS communication related supersteps occurred
+In total 2729 augmenting paths were found, 2725 accepted and 4 rejected
+Proc 0 found a total of 2502 augmenting paths
+Proc 1 found a total of 2502 augmenting paths
+MATRIX
+50062 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4558 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.037195 seconds
+In total the algorith took 0.189034 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 2 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 134 augmenting paths were found of length 2
+Of these paths 134 were accepted and therefore 0 rejected
+In round 1, 134 augmenting paths were found, resulting in 134 new matchings
+In round 2 a total of 248 augmenting paths were found of length 4
+Of these paths 248 were accepted and therefore 0 rejected
+In round 2, 248 augmenting paths were found, resulting in 248 new matchings
+In round 3 a total of 63 augmenting paths were found of length 6
+Of these paths 62 were accepted and therefore 1 rejected
+In round 3, 63 augmenting paths were found, resulting in 62 new matchings
+In round 4 a total of 8 augmenting paths were found of length 8
+Of these paths 8 were accepted and therefore 0 rejected
+In round 4, 8 augmenting paths were found, resulting in 8 new matchings
+In round 5 a total of 1 augmenting paths were found of length 10
+Of these paths 1 were accepted and therefore 0 rejected
+In round 5, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 25 BFS communication related supersteps occurred
+A total of 244 DFS communication related supersteps occurred
+In total 2722 augmenting paths were found, 2721 accepted and 1 rejected
+Proc 0 found a total of 2501 augmenting paths
+Proc 1 found a total of 2500 augmenting paths
+MATRIX
+49973 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 4547 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.036728 seconds
+In total the algorith took 0.165379 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 4 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 779 augmenting paths were found of length 2
+Of these paths 778 were accepted and therefore 1 rejected
+In round 1, 779 augmenting paths were found, resulting in 778 new matchings
+In round 2 a total of 353 augmenting paths were found of length 4
+Of these paths 351 were accepted and therefore 2 rejected
+In round 2, 353 augmenting paths were found, resulting in 351 new matchings
+In round 3 a total of 46 augmenting paths were found of length 6
+Of these paths 46 were accepted and therefore 0 rejected
+In round 3, 46 augmenting paths were found, resulting in 46 new matchings
+In round 4 a total of 15 augmenting paths were found of length 8
+Of these paths 12 were accepted and therefore 3 rejected
+In round 4, 15 augmenting paths were found, resulting in 12 new matchings
+In round 5 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 5, 2 augmenting paths were found, resulting in 2 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 323 DFS communication related supersteps occurred
+In total 2166 augmenting paths were found, 2160 accepted and 6 rejected
+Proc 0 found a total of 1250 augmenting paths
+Proc 1 found a total of 1252 augmenting paths
+Proc 2 found a total of 1253 augmenting paths
+Proc 3 found a total of 1250 augmenting paths
+MATRIX
+49871 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 3809 was found
+Found a maximum matching of size 4999
+Final timing
+In total the preprocessing step took 0.045272 seconds
+In total the algorith took 0.200122 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 4 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 735 augmenting paths were found of length 2
+Of these paths 733 were accepted and therefore 2 rejected
+In round 1, 735 augmenting paths were found, resulting in 733 new matchings
+In round 2 a total of 348 augmenting paths were found of length 4
+Of these paths 347 were accepted and therefore 1 rejected
+In round 2, 348 augmenting paths were found, resulting in 347 new matchings
+In round 3 a total of 54 augmenting paths were found of length 6
+Of these paths 52 were accepted and therefore 2 rejected
+In round 3, 54 augmenting paths were found, resulting in 52 new matchings
+In round 4 a total of 13 augmenting paths were found of length 8
+Of these paths 11 were accepted and therefore 2 rejected
+In round 4, 13 augmenting paths were found, resulting in 11 new matchings
+In round 5 a total of 4 augmenting paths were found of length 10
+Of these paths 3 were accepted and therefore 1 rejected
+In round 5, 4 augmenting paths were found, resulting in 3 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 25 BFS communication related supersteps occurred
+A total of 308 DFS communication related supersteps occurred
+In total 2117 augmenting paths were found, 2109 accepted and 8 rejected
+Proc 0 found a total of 1252 augmenting paths
+Proc 1 found a total of 1253 augmenting paths
+Proc 2 found a total of 1253 augmenting paths
+Proc 3 found a total of 1250 augmenting paths
+MATRIX
+50239 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 3854 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.045045 seconds
+In total the algorith took 0.182876 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 4 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 805 augmenting paths were found of length 2
+Of these paths 805 were accepted and therefore 0 rejected
+In round 1, 805 augmenting paths were found, resulting in 805 new matchings
+In round 2 a total of 312 augmenting paths were found of length 4
+Of these paths 309 were accepted and therefore 3 rejected
+In round 2, 312 augmenting paths were found, resulting in 309 new matchings
+In round 3 a total of 57 augmenting paths were found of length 6
+Of these paths 54 were accepted and therefore 3 rejected
+In round 3, 57 augmenting paths were found, resulting in 54 new matchings
+In round 4 a total of 16 augmenting paths were found of length 8
+Of these paths 14 were accepted and therefore 2 rejected
+In round 4, 16 augmenting paths were found, resulting in 14 new matchings
+In round 5 a total of 3 augmenting paths were found of length 10
+Of these paths 3 were accepted and therefore 0 rejected
+In round 5, 3 augmenting paths were found, resulting in 3 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 25 BFS communication related supersteps occurred
+A total of 321 DFS communication related supersteps occurred
+In total 2154 augmenting paths were found, 2146 accepted and 8 rejected
+Proc 0 found a total of 1250 augmenting paths
+Proc 1 found a total of 1253 augmenting paths
+Proc 2 found a total of 1253 augmenting paths
+Proc 3 found a total of 1251 augmenting paths
+MATRIX
+49918 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 3814 was found
+Found a maximum matching of size 4999
+Final timing
+In total the preprocessing step took 0.046309 seconds
+In total the algorith took 0.185514 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 4 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 766 augmenting paths were found of length 2
+Of these paths 762 were accepted and therefore 4 rejected
+In round 1, 766 augmenting paths were found, resulting in 762 new matchings
+In round 2 a total of 352 augmenting paths were found of length 4
+Of these paths 348 were accepted and therefore 4 rejected
+In round 2, 352 augmenting paths were found, resulting in 348 new matchings
+In round 3 a total of 55 augmenting paths were found of length 6
+Of these paths 55 were accepted and therefore 0 rejected
+In round 3, 55 augmenting paths were found, resulting in 55 new matchings
+In round 4 a total of 8 augmenting paths were found of length 8
+Of these paths 8 were accepted and therefore 0 rejected
+In round 4, 8 augmenting paths were found, resulting in 8 new matchings
+In round 5 a total of 4 augmenting paths were found of length 10
+Of these paths 3 were accepted and therefore 1 rejected
+In round 5, 4 augmenting paths were found, resulting in 3 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 324 DFS communication related supersteps occurred
+In total 2134 augmenting paths were found, 2125 accepted and 9 rejected
+Proc 0 found a total of 1249 augmenting paths
+Proc 1 found a total of 1253 augmenting paths
+Proc 2 found a total of 1249 augmenting paths
+Proc 3 found a total of 1256 augmenting paths
+MATRIX
+50017 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 3821 was found
+Found a maximum matching of size 4998
+Final timing
+In total the preprocessing step took 0.047043 seconds
+In total the algorith took 0.204863 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 4 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 754 augmenting paths were found of length 2
+Of these paths 754 were accepted and therefore 0 rejected
+In round 1, 754 augmenting paths were found, resulting in 754 new matchings
+In round 2 a total of 335 augmenting paths were found of length 4
+Of these paths 331 were accepted and therefore 4 rejected
+In round 2, 335 augmenting paths were found, resulting in 331 new matchings
+In round 3 a total of 46 augmenting paths were found of length 6
+Of these paths 44 were accepted and therefore 2 rejected
+In round 3, 46 augmenting paths were found, resulting in 44 new matchings
+In round 4 a total of 9 augmenting paths were found of length 8
+Of these paths 9 were accepted and therefore 0 rejected
+In round 4, 9 augmenting paths were found, resulting in 9 new matchings
+In round 5 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 5, 2 augmenting paths were found, resulting in 2 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 25 BFS communication related supersteps occurred
+A total of 309 DFS communication related supersteps occurred
+In total 2104 augmenting paths were found, 2098 accepted and 6 rejected
+Proc 0 found a total of 1250 augmenting paths
+Proc 1 found a total of 1251 augmenting paths
+Proc 2 found a total of 1251 augmenting paths
+Proc 3 found a total of 1254 augmenting paths
+MATRIX
+50701 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 3860 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.047124 seconds
+In total the algorith took 0.182555 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 8 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 1711 augmenting paths were found of length 2
+Of these paths 1702 were accepted and therefore 9 rejected
+In round 1, 1711 augmenting paths were found, resulting in 1702 new matchings
+In round 2 a total of 333 augmenting paths were found of length 4
+Of these paths 327 were accepted and therefore 6 rejected
+In round 2, 333 augmenting paths were found, resulting in 327 new matchings
+In round 3 a total of 53 augmenting paths were found of length 6
+Of these paths 49 were accepted and therefore 4 rejected
+In round 3, 53 augmenting paths were found, resulting in 49 new matchings
+In round 4 a total of 12 augmenting paths were found of length 8
+Of these paths 10 were accepted and therefore 2 rejected
+In round 4, 12 augmenting paths were found, resulting in 10 new matchings
+In round 5 a total of 1 augmenting paths were found of length 10
+Of these paths 1 were accepted and therefore 0 rejected
+In round 5, 1 augmenting paths were found, resulting in 1 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 287 DFS communication related supersteps occurred
+In total 2477 augmenting paths were found, 2456 accepted and 21 rejected
+Proc 0 found a total of 627 augmenting paths
+Proc 1 found a total of 629 augmenting paths
+Proc 2 found a total of 626 augmenting paths
+Proc 3 found a total of 630 augmenting paths
+Proc 4 found a total of 628 augmenting paths
+Proc 5 found a total of 625 augmenting paths
+Proc 6 found a total of 626 augmenting paths
+Proc 7 found a total of 630 augmenting paths
+MATRIX
+50128 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 2910 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.122115 seconds
+In total the algorith took 0.401719 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 8 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 1754 augmenting paths were found of length 2
+Of these paths 1747 were accepted and therefore 7 rejected
+In round 1, 1754 augmenting paths were found, resulting in 1747 new matchings
+In round 2 a total of 331 augmenting paths were found of length 4
+Of these paths 326 were accepted and therefore 5 rejected
+In round 2, 331 augmenting paths were found, resulting in 326 new matchings
+In round 3 a total of 58 augmenting paths were found of length 6
+Of these paths 56 were accepted and therefore 2 rejected
+In round 3, 58 augmenting paths were found, resulting in 56 new matchings
+In round 4 a total of 8 augmenting paths were found of length 8
+Of these paths 7 were accepted and therefore 1 rejected
+In round 4, 8 augmenting paths were found, resulting in 7 new matchings
+In round 5 a total of 4 augmenting paths were found of length 10
+Of these paths 3 were accepted and therefore 1 rejected
+In round 5, 4 augmenting paths were found, resulting in 3 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 291 DFS communication related supersteps occurred
+In total 2509 augmenting paths were found, 2493 accepted and 16 rejected
+Proc 0 found a total of 626 augmenting paths
+Proc 1 found a total of 626 augmenting paths
+Proc 2 found a total of 626 augmenting paths
+Proc 3 found a total of 627 augmenting paths
+Proc 4 found a total of 628 augmenting paths
+Proc 5 found a total of 628 augmenting paths
+Proc 6 found a total of 628 augmenting paths
+Proc 7 found a total of 627 augmenting paths
+MATRIX
+49827 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 2860 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.120038 seconds
+In total the algorith took 0.401135 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 8 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 1756 augmenting paths were found of length 2
+Of these paths 1748 were accepted and therefore 8 rejected
+In round 1, 1756 augmenting paths were found, resulting in 1748 new matchings
+In round 2 a total of 344 augmenting paths were found of length 4
+Of these paths 337 were accepted and therefore 7 rejected
+In round 2, 344 augmenting paths were found, resulting in 337 new matchings
+In round 3 a total of 50 augmenting paths were found of length 6
+Of these paths 49 were accepted and therefore 1 rejected
+In round 3, 50 augmenting paths were found, resulting in 49 new matchings
+In round 4 a total of 9 augmenting paths were found of length 8
+Of these paths 9 were accepted and therefore 0 rejected
+In round 4, 9 augmenting paths were found, resulting in 9 new matchings
+In round 5 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 5, 2 augmenting paths were found, resulting in 2 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 25 BFS communication related supersteps occurred
+A total of 301 DFS communication related supersteps occurred
+In total 2520 augmenting paths were found, 2504 accepted and 16 rejected
+Proc 0 found a total of 626 augmenting paths
+Proc 1 found a total of 629 augmenting paths
+Proc 2 found a total of 626 augmenting paths
+Proc 3 found a total of 627 augmenting paths
+Proc 4 found a total of 625 augmenting paths
+Proc 5 found a total of 628 augmenting paths
+Proc 6 found a total of 628 augmenting paths
+Proc 7 found a total of 627 augmenting paths
+MATRIX
+49960 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 2855 was found
+Found a maximum matching of size 5000
+Final timing
+In total the preprocessing step took 0.123443 seconds
+In total the algorith took 0.406938 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 8 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 1769 augmenting paths were found of length 2
+Of these paths 1762 were accepted and therefore 7 rejected
+In round 1, 1769 augmenting paths were found, resulting in 1762 new matchings
+In round 2 a total of 323 augmenting paths were found of length 4
+Of these paths 312 were accepted and therefore 11 rejected
+In round 2, 323 augmenting paths were found, resulting in 312 new matchings
+In round 3 a total of 56 augmenting paths were found of length 6
+Of these paths 52 were accepted and therefore 4 rejected
+In round 3, 56 augmenting paths were found, resulting in 52 new matchings
+In round 4 a total of 14 augmenting paths were found of length 8
+Of these paths 10 were accepted and therefore 4 rejected
+In round 4, 14 augmenting paths were found, resulting in 10 new matchings
+In round 5 a total of 1 augmenting paths were found of length 10
+Of these paths 1 were accepted and therefore 0 rejected
+In round 5, 1 augmenting paths were found, resulting in 1 new matchings
+In round 6 a total of 1 augmenting paths were found of length 12
+Of these paths 1 were accepted and therefore 0 rejected
+In round 6, 1 augmenting paths were found, resulting in 1 new matchings
+DONE!
+A total of 6 rounds of HK were required for the solution
+A total of 36 BFS communication related supersteps occurred
+A total of 298 DFS communication related supersteps occurred
+In total 2517 augmenting paths were found, 2491 accepted and 26 rejected
+Proc 0 found a total of 630 augmenting paths
+Proc 1 found a total of 628 augmenting paths
+Proc 2 found a total of 630 augmenting paths
+Proc 3 found a total of 630 augmenting paths
+Proc 4 found a total of 629 augmenting paths
+Proc 5 found a total of 628 augmenting paths
+Proc 6 found a total of 625 augmenting paths
+Proc 7 found a total of 625 augmenting paths
+MATRIX
+49893 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 2861 was found
+Found a maximum matching of size 4999
+Final timing
+In total the preprocessing step took 0.121134 seconds
+In total the algorith took 0.410966 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 8 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+In round 1 a total of 1738 augmenting paths were found of length 2
+Of these paths 1728 were accepted and therefore 10 rejected
+In round 1, 1738 augmenting paths were found, resulting in 1728 new matchings
+In round 2 a total of 326 augmenting paths were found of length 4
+Of these paths 322 were accepted and therefore 4 rejected
+In round 2, 326 augmenting paths were found, resulting in 322 new matchings
+In round 3 a total of 60 augmenting paths were found of length 6
+Of these paths 57 were accepted and therefore 3 rejected
+In round 3, 60 augmenting paths were found, resulting in 57 new matchings
+In round 4 a total of 11 augmenting paths were found of length 8
+Of these paths 10 were accepted and therefore 1 rejected
+In round 4, 11 augmenting paths were found, resulting in 10 new matchings
+In round 5 a total of 2 augmenting paths were found of length 10
+Of these paths 2 were accepted and therefore 0 rejected
+In round 5, 2 augmenting paths were found, resulting in 2 new matchings
+DONE!
+A total of 5 rounds of HK were required for the solution
+A total of 25 BFS communication related supersteps occurred
+A total of 301 DFS communication related supersteps occurred
+In total 2513 augmenting paths were found, 2495 accepted and 18 rejected
+Proc 0 found a total of 627 augmenting paths
+Proc 1 found a total of 626 augmenting paths
+Proc 2 found a total of 630 augmenting paths
+Proc 3 found a total of 627 augmenting paths
+Proc 4 found a total of 626 augmenting paths
+Proc 5 found a total of 629 augmenting paths
+Proc 6 found a total of 625 augmenting paths
+Proc 7 found a total of 627 augmenting paths
+MATRIX
+50199 connections out of 25000000 possible
+MATCHING
+In preprocessing a matching of size 2880 was found
+Found a maximum matching of size 4999
+Final timing
+In total the preprocessing step took 0.121317 seconds
+In total the algorith took 0.403696 seconds
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 16 processors
+
+Which performance improvements? 0 for none, 1 for preprocessing, 2 for postprocessing, 3 for both
+Select the frequency of postprocessing, where 1 means every round, 2 every 2 rounds etc.
+How many vertices on the left side of the bipartite graph?
+How many vertices on the right side of the bipartite graph?
+How many edges per vertex on average?
+How many processors do you want to use?
+-------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+-------------------------------------------------------
+
+----------
+
+|U| = 5000, |V| = 1000, 10 edges/vertex, 16 processors
+
+
+----------
+
