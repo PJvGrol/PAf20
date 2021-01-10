@@ -135,12 +135,17 @@ void bsphk(){
     bool *currentVerticesUs = vecallocb(p * m);
     bool *currentVerticesVs = vecallocb(p * n);
     bool *bfsDones = vecallocb(p);
+
+    if (postProcessing){
+        bsp_push_reg(currentVerticesUs, p * m * sizeof(bool));
+        bsp_push_reg(currentVerticesVs, p * n * sizeof(bool));
+        bsp_push_reg(bfsDones, p * sizeof(bool));
+    }
+
     long *paths = vecalloci(p * (m + n));
     long *pathIndices = vecalloci(p);
     bool *pathsFound = vecallocb(p);
-    bsp_push_reg(currentVerticesUs, p * m * sizeof(bool));
-    bsp_push_reg(currentVerticesVs, p * n * sizeof(bool));
-    bsp_push_reg(bfsDones, p * sizeof(bool));
+    bsp_push_reg(currentVerticesV, n * sizeof(bool));
     bsp_push_reg(paths, p * (m + n) * sizeof(long));
     bsp_push_reg(pathIndices, p * sizeof(long));
     bsp_push_reg(pathsFound, p * sizeof(bool));
@@ -551,8 +556,6 @@ void bsphk(){
         preMatchingCount = tempMatchingCount;
         oldMatchingCount = tempMatchingCount;
         newMatchingCount = tempMatchingCount;
-
-        printf("Proc %ld tempcount %ld\n", s, tempMatchingCount);
     }
 
     double outerLoopStartTime = bsp_time();
@@ -583,28 +586,28 @@ void bsphk(){
                 finalVerticesV[i] = false;
             }
 
+            bfsLayers[layer] = index;
+
             // Layer 0 and 1 of BFS, cyclic distr.
 
-            for (long i = s; i < m; i += p){
+            for (long i = 0; i < m; i++){
                 if (layerUHasEdges[i] && ul[i] == -1 && !visitedVerticesU[i]){
-                    currentVerticesU[i] = true;
+                    visitedVerticesU[i] = true;
+                    bfsResult[index] = i;
+                    index++;
 
-                    for (long j = 0; j < n; j++){
+                    for (long j = s; j < n; j += p){
                         if (edges[i * n + j] == 1 && !visitedVerticesV[j]){
                             currentVerticesV[j] = true;
-
-                            if (vl[j] == -1){
-                                bfsDone = true;
-                            }
                         }
                     }
                 }
             }
 
             for (long i = 0; i < p; i++){
-                bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
-                bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
-                bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+                for (long j = s; j < n; j += p){
+                    bsp_put(i, &currentVerticesV[j], currentVerticesV, j * sizeof(bool), sizeof(bool));
+                }
             }
 
             bsp_sync();
@@ -612,59 +615,17 @@ void bsphk(){
 
             bfsDone = false;
 
-            for (long i = 0; i < p; i++){
-                if (bfsDones[i]){
-                    bfsDone = true;
-                }
-            }
-
-            bfsLayers[layer] = index;
-
-            for (long i = 0; i < m; i++){
-                bool vertexVisited = false;
-
-                for (long j = 0; j < p; j++){
-                    if (currentVerticesUs[j * m + i]){
-                        vertexVisited = true;
-                    }
-                }
-
-                if (vertexVisited){
-                    currentVerticesU[i] = true;
-                    bfsResult[index] = i;
-                    index++;
-                }
-            }
-
             layer++;
             bfsLayers[layer] = index;
 
-            for (long i = 0; i < m; i++){
-                currentVerticesU[i] = false;
-            }
-
             for (long i = 0; i < n; i++){
-                bool vertexVisited = false;
-
-                for (long j = 0; j < p; j++){
-                    if (currentVerticesVs[j * n + i]){
-                        vertexVisited = true;
-                    }
-                }
-
-                if (vertexVisited){
+                if (currentVerticesV[i]){
                     visitedVerticesV[i] = true;
-
-                    if (bfsDone && vl[i] == -1){
+                    bfsResult[index] = i;
+                    index++;
+                    if (v[i] == -1){
                         finalVerticesV[i] = true;
-                        currentVerticesV[i] = true;
-                        bfsResult[index] = i;
-                        index++;
-                    }
-                    else if (!bfsDone){
-                        currentVerticesV[i] = true;
-                        bfsResult[index] = i;
-                        index++;
+                        bfsDone = true;
                     }
                 }
             }
@@ -681,57 +642,32 @@ void bsphk(){
             while (!bfsDone && bfsCanContinue){
                 // layer % 2 == 0 means we're in V and need to get to U over a matched edge
                 if (layer % 2 == 0){
-                    for (long i = s; i < n; i += p){
-                        if (currentVerticesV[i] && !visitedVerticesU[vl[i]]){
-                            currentVerticesU[vl[i]] = true;
-                        }
-                    }
-
-                    for (long i = 0; i < p; i++){
-                        bsp_put(i, currentVerticesU, currentVerticesUs, s * m * sizeof(bool), m * sizeof(bool));
-                    }
-
-                    bsp_sync();
-                    bfsSuperSteps++;
-
                     for (long i = 0; i < n; i++){
-                        currentVerticesV[i] = false;
-                    }
-
-                    for (long i = 0; i < m; i++){
-                        bool vertexVisited = false;
-
-                        for (long j = 0; j < p; j++){
-                            if (currentVerticesUs[j * m + i]){
-                                vertexVisited = true;
-                            }
-                        }
-
-                        if (vertexVisited){
-                            currentVerticesU[i] = true;
-                            bfsResult[index] = i;
+                        if (currentVerticesV[i] && !visitedVerticesU[v[i]]){
+                            currentVerticesU[v[i]] = true;
+                            visitedVerticesU[v[i]] = true;
+                            bfsResult[index] = v[i];
                             index++;
                         }
+                        currentVerticesV[i] = false;
                     }
                 }
                 else{
-                    for (long i = s; i < m; i += p){
+                    for (long i = 0; i < m; i++){
                         if (currentVerticesU[i]){
-                            for (long j = 0; j < n; j++){
+                            for (long j = s; j < n; j += p){
                                 if (!visitedVerticesV[j] && edges[i * n + j] == 1 && ul[i] != j){
                                     currentVerticesV[j] = true;
-
-                                    if (vl[j] == -1){
-                                        bfsDone = true;
-                                    }
                                 }
                             }
                         }
+                        currentVerticesU[i] = false;
                     }
 
                     for (long i = 0; i < p; i++){
-                        bsp_put(i, currentVerticesV, currentVerticesVs, s * n * sizeof(bool), n * sizeof(bool));
-                        bsp_put(i, &bfsDone, bfsDones, s * sizeof(bool), sizeof(bool));
+                        for (long j = s; j < n; j += p){
+                            bsp_put(i, &currentVerticesV[j], currentVerticesV, j * sizeof(bool), sizeof(bool));
+                        }
                     }
 
                     bsp_sync();
@@ -739,38 +675,14 @@ void bsphk(){
 
                     bfsDone = false;
 
-                    for (long i = 0; i < p; i++){
-                        if (bfsDones[i]){
-                            bfsDone = true;
-                        }
-                    }
-
-                    for (long i = 0; i < m; i++){
-                        currentVerticesU[i] = false;
-                    }
-
                     for (long i = 0; i < n; i++){
-                        bool vertexVisited = false;
-
-                        for (long j = 0; j < p; j++){
-                            if (currentVerticesVs[j * n + i]){
-                                vertexVisited = true;
-                            }
-                        }
-
-                        if (vertexVisited){
+                        if (currentVerticesV[i]){
                             visitedVerticesV[i] = true;
-
-                            if (bfsDone && vl[i] == -1){
+                            bfsResult[index] = i;
+                            index++;
+                            if (v[i] == -1){
                                 finalVerticesV[i] = true;
-                                currentVerticesV[i] = true;
-                                bfsResult[index] = i;
-                                index++;
-                            }
-                            else if (!bfsDone){
-                                currentVerticesV[i] = true;
-                                bfsResult[index] = i;
-                                index++;
+                                bfsDone = true;
                             }
                         }
                     }
@@ -1218,12 +1130,16 @@ void bsphk(){
                     //     }
                     // }
 
+                    // for (long i = 0; i < m; i++){
+                    //     printf("u %ld, v %ld in matching\n", i, u[i]);
+                    // }
+
                     printf("MATCHING\n");
                     if (preProcessing){
                         printf("In preprocessing a matching of size %ld was found\n", preMatchingCount);
                     }
 
-                    printf("Found a maximum matching of size %ld\n", newMatchingCount);
+                    printf("Found a maximum matching of size %ld and upper bound %ld\n", newMatchingCount, maxMatchingCount);
 
                     printf("Final timing\n");
                     if (f == 0){
@@ -1300,16 +1216,18 @@ void bsphk(){
         }
 
         for (long i = 0; i < p; i++){
-            bfsDones[i] = false;
             pathsFound[i] = false;
         }
 
         roundCounter++;
     }
+    
+    if (postProcessing){
+        bsp_pop_reg(currentVerticesUs);
+        bsp_pop_reg(currentVerticesVs);
+        bsp_pop_reg(bfsDones);
+    }
 
-    bsp_pop_reg(currentVerticesUs);
-    bsp_pop_reg(currentVerticesVs);
-    bsp_pop_reg(bfsDones);
     bsp_pop_reg(paths);
     bsp_pop_reg(pathIndices);
     bsp_pop_reg(pathsFound);
@@ -1321,12 +1239,12 @@ void bsphk(){
     vecfreei(v);
     vecfreei(ul);
     vecfreei(vl);
+    vecfreeb(visitedVerticesU);
     vecfreeb(visitedVerticesV);
     vecfreeb(currentVerticesU);
     vecfreeb(currentVerticesV);
     vecfreeb(currentVerticesUs);
     vecfreeb(currentVerticesVs);
-    vecfreeb(bfsDones);
     vecfreei(paths);
     vecfreei(pathIndices);
     vecfreeb(pathsFound);
