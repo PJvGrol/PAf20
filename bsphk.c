@@ -365,10 +365,6 @@ void bsphk(){
 
             bool preDfsDone = false;
 
-            long preAugmentingPaths = 0;
-            long preAugmentingPathsAccepted = 0;
-            long preAugmentingPathsRejected = 0;
-
             while (!preDfsDone){
                 bool prePathFound = false;
                 long prePathIndex = 0;
@@ -455,8 +451,6 @@ void bsphk(){
                 preDfsDone = true;
 
                 if (prePathFound){
-                    preAugmentingPaths++;
-                    totalPaths++;
                     preDfsDone = false;
                     nrPathsFound[s]++;
                     bool pathAccepted = true;
@@ -475,8 +469,6 @@ void bsphk(){
                     }
 
                     if (pathAccepted){
-                        acceptedPaths++;
-                        preAugmentingPathsAccepted++;
                         finalVerticesV[path[0]] = false;
 
                         for (long j = 0; j < prePathIndex; j++){
@@ -487,10 +479,6 @@ void bsphk(){
                                 ul[path[j]] = path[j - 1];
                             }
                         }
-                    }
-                    else{
-                        rejectedPaths++;
-                        preAugmentingPathsRejected++;
                     }
                 }
 
@@ -531,42 +519,28 @@ void bsphk(){
             }
         }
 
-        long *us = vecalloci(p * m);
-        long *vs = vecalloci(p * n);
-
-        bsp_push_reg(us, p * m * sizeof(long));
-        bsp_push_reg(vs, p * n * sizeof(long));
+        bsp_push_reg(u, m * sizeof(long));
+        bsp_push_reg(v, n * sizeof(long));
         bsp_push_reg(nrPathsFound, p * sizeof(long));
         bsp_sync();
 
         long tempNrPathsFound = nrPathsFound[s];
 
         for (long i = 0; i < p; i++){
-            bsp_put(i, u, us, s * m * sizeof(long), m * sizeof(long));
-            bsp_put(i, v, vs, s * n * sizeof(long), n * sizeof(long));
+            for (long j = s; j < m; j += p){
+                bsp_put(i, &u[j], u, j * sizeof(long), sizeof(long));
+            }
+            for (long j = s; j < n; j += p){
+                bsp_put(i, &v[j], v, j * sizeof(long), sizeof(long));
+            }
             bsp_put(i, &tempNrPathsFound, nrPathsFound, s * sizeof(long), sizeof(long));
         }
 
         bsp_sync();
 
-        for (long i = 0; i < p; i++){
-            for (long j = i; j < m; j += p){
-                u[j] = us[i * m + j];
-                ul[j] = us[i * m + j];
-            }
-            for (long j = i; j < n; j += p){
-                v[j] = vs[i * n + j];
-                vl[j] = vs[i * n + j];
-            }
-        }
-
-        bsp_pop_reg(us);
-        bsp_pop_reg(vs);
-
-        vecfreei(us);
-        vecfreei(vs);
-
-        bsp_sync();
+        bsp_pop_reg(u);
+        bsp_pop_reg(v);
+        bsp_pop_reg(nrPathsFound);
 
         long tempMatchingCount = 0;
         for (long i = 0; i < m; i++){
@@ -577,6 +551,8 @@ void bsphk(){
         preMatchingCount = tempMatchingCount;
         oldMatchingCount = tempMatchingCount;
         newMatchingCount = tempMatchingCount;
+
+        printf("Proc %ld tempcount %ld\n", s, tempMatchingCount);
     }
 
     double outerLoopStartTime = bsp_time();
@@ -1216,11 +1192,9 @@ void bsphk(){
             done = true;
 
             if (s == 0){
-                bool error = false;
-
                 printf("DONE!\n");
 
-                if (s == 0 && (true || newMatchingCount != maxMatchingCount)){
+                if ((true || newMatchingCount != maxMatchingCount)){
                     printf("A total of %ld rounds of HK were required for the solution\n", roundCounter);
 
                     printf("A total of %ld BFS communication related supersteps occurred\n", bfsSuperSteps);
@@ -1268,20 +1242,45 @@ void bsphk(){
                         printf("In total postprocessing took %.6lf seconds\n", totalPostProcessingTime);
                         printf("In total the algorith took %.6lf seconds\n", endTime - preProcessingStart);
                     }
+                }
+            }
+            else{
+                bool error = false;
+                for (long i = 0; i < m; i++){
+                    currentVerticesU[i] = false;
+                }
 
-                    // printf("NEW MATCHING\n");
+                for (long i = 0; i < n; i++){
+                    currentVerticesV[i] = false;
+                }
 
-                    // for (long i = 0; i < m; i++){
+                for (long i = 0; i < m; i++){
+                    if (u[i] != -1){
+                        if (currentVerticesV[u[i]]){
+                            error = true;
+                        }
+                        currentVerticesV[u[i]] = true;
+                    }
 
-                    //     printf("Vertex %ld in U connected to vertex %ld in V\n", i, ul[i]);
+                    if (edges[n * i + ul[i]] != 1 && ul[i] != -1){
+                        error = true;
+                    }
+                }
 
-                    //     if (edges[n * i + ul[i]] != 1 && ul[i] != -1){
-                    //         error = true;
-                    //     }
-                    // }
+                for (long i = 0; i < n; i++){
+                    if (v[i] != -1){
+                        if (currentVerticesU[v[i]]){
+                            error = true;
+                        }
+                        currentVerticesU[v[i]] = true;
+                    }
+
+                    if (edges[n * v[i] + i] != 1 && v[i] != -1){
+                        error = true;
+                    }
                 }
                 if (error){
-                    printf("ERROR!\n");
+                    printf("ERROR\n");
                 }
             }
 
@@ -1313,7 +1312,9 @@ void bsphk(){
     bsp_pop_reg(bfsDones);
     bsp_pop_reg(paths);
     bsp_pop_reg(pathIndices);
-    bsp_pop_reg(pathsFound);   
+    bsp_pop_reg(pathsFound);
+
+    bsp_sync();
 
     vecfreei(edges);
     vecfreei(u);
